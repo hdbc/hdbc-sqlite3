@@ -152,7 +152,7 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  if r
                     then return (Executed sto, (-1))
                     else do ffinish (dbo sstate) sto
-                            return (Empty, 0)
+                            return (Empty, (-1))
                                                         )
           bindArgs p i SqlNull =
               sqlite3_bind_null p i >>= 
@@ -167,7 +167,7 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
 
 -- FIXME: needs a faster algorithm.
 fexecutemany sstate arglist =
-    mapM (fexecute sstate) arglist >>= return . genericLength
+    mapM_ (fexecute sstate) arglist
 
 --ffinish o = withForeignPtr o (\p -> sqlite3_finalize p >>= checkError "finish")
 -- Finish and change state
