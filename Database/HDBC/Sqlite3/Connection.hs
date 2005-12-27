@@ -1,3 +1,5 @@
+{-# CFILES hdbc-sqlite3-helper.c #-}
+-- above line for hugs
 {-
 Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
 

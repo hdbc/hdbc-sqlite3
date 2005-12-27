@@ -1,3 +1,5 @@
+{-# CFILES hdbc-sqlite3-helper.c #-}
+-- Above line for Hugs
 {- -*- mode:haskell; -*-
 Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
 
