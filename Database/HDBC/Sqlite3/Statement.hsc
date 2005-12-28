@@ -155,12 +155,26 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                                          seErrorMsg = "In HDBC execute, received " ++ (show args) ++ " but expected " ++ (show c) ++ " args."})
                  sqlite3_reset p >>= checkError "execute (reset)" (dbo sstate)
                  zipWithM_ (bindArgs p) [1..c] args
+
+                 {- Logic for handling counts of changes: look at the total
+                    changes before and after the query.  If they differ,
+                    then look at the local changes.  (The local change counter
+                    appears to not be updated unless really running a query
+                    that makes a change, according to the docs.)
+
+                    This is OK thread-wise because SQLite doesn't support
+                    using a given dbh in more than one thread anyway. -}
+                 origtc <- withSqlite3 (dbo sstate) sqlite3_total_changes 
                  r <- fstep (dbo sstate) p
+                 newtc <- withSqlite3 (dbo sstate) sqlite3_total_changes
+                 changes <- if origtc == newtc
+                               then return 0
+                               else withSqlite3 (dbo sstate) sqlite3_changes
                  fgetcolnames p >>= swapMVar (colnamesmv sstate)
                  if r
-                    then return (Executed sto, (-1))
+                    then return (Executed sto, fromIntegral changes)
                     else do ffinish (dbo sstate) sto
-                            return (Empty, (-1))
+                            return (Empty, fromIntegral changes)
                                                         )
           bindArgs p i SqlNull =
               sqlite3_bind_null p i >>= 
@@ -232,3 +246,9 @@ foreign import ccall unsafe "hdbc-sqlite3-helper.h sqlite3_bind_text2"
 
 foreign import ccall unsafe "sqlite3.h sqlite3_bind_null"
   sqlite3_bind_null :: (Ptr CStmt) -> CInt -> IO CInt
+
+foreign import ccall unsafe "sqlite3.h sqlite3_changes"
+  sqlite3_changes :: Ptr CSqlite3 -> IO CInt
+
+foreign import ccall unsafe "sqlite3.h sqlite3_total_changes"
+  sqlite3_total_changes :: Ptr CSqlite3 -> IO CInt

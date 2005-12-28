@@ -20,6 +20,10 @@ DIFFERENCES FROM HDBC STANDARD
 SQLite is unable to return the number of modified rows from a table
 when you run a "DELETE FROM" command with no WHERE clause.
 
+On the topic of thread safety, SQLite has some limitations, and thus
+HDBC programs that use SQLite will share those limitations.  Please
+see http://www.sqlite.org/faq.html#q8 for more details.
+
 PREREQUISITES
 -------------
 
