@@ -14,6 +14,12 @@ the filename of the database to connect to.
 All database accessor functions are provided in the main HDBC module. -}
 connectSqlite3 :: FilePath -> IO Connection
 
+DIFFERENCES FROM HDBC STANDARD
+------------------------------
+
+SQLite is unable to return the number of modified rows from a table
+when you run a "DELETE FROM" command with no WHERE clause.
+
 PREREQUISITES
 -------------
 
