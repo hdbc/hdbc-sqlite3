@@ -33,6 +33,10 @@ import Database.HDBC.Sqlite3.Utils
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
+{- | Connect to an Sqlite version 3 database.  The only parameter needed is
+the filename of the database to connect to.
+
+All database accessor functions are provided in the main HDBC module. -}
 connectSqlite3 :: FilePath -> IO Connection
 connectSqlite3 fp = 
     withCString fp 
