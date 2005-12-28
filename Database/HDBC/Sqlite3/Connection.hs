@@ -65,7 +65,15 @@ mkConn fp obj =
                             hdbcClientVer = ver,
                             proxiedClientName = "sqlite3",
                             proxiedClientVer = ver,
-                            dbServerVer = ver}
+                            dbServerVer = ver,
+                            getTables = fgettables obj}
+
+fgettables o =
+    do sth <- newSth o "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+       execute sth []
+       res1 <- fetchAllRows sth
+       let res = map fromSql $ concat res1
+       return $ seq (length res) res
 
 --------------------------------------------------
 -- Guts here
