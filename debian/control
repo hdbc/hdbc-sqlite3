@@ -8,7 +8,7 @@ Section: libs
 Package: libghc6-hdbc-sqlite3-dev
 Section: libdevel
 Architecture: any
-Depends: libghc6-hdbc-dev (>= 0.99.0), ${haskell:Depends}, ${shlibs:Depends}, ${misc:Depends}
+Depends: libghc6-hdbc-dev (>= 0.99.0), ${haskell:Depends}, ${shlibs:Depends}, ${misc:Depends}, libsqlite3-dev (>= 3.2.7)
 Description: Sqlite v3 HDBC (Haskell Database Connectivity) Driver for GHC
  HDBC provides an abstraction layer between Haskell programs and SQL
  relational databases. This lets you write database code once, in

@@ -52,7 +52,7 @@ clean:
 	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
-	#-$(MAKE) clean
+	-$(MAKE) clean
 	-./setup clean
 	-rm -rf setup Setup.hi Setup.ho Setup.o .*config* dist
 
@@ -67,8 +67,8 @@ install: build
 	# Add here commands to install the package into debian/tmp
 	#$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 	dh_haskell -a
-	rm -r dist
-	make test
+	$(MAKE) clean
+	$(MAKE) test
 
 # Build architecture-independent files here.
 binary-indep: build install
