@@ -30,8 +30,8 @@ setup: Setup.lhs HDBC-sqlite3.cabal
 
 clean:
 	-./setup clean
-	-rm -rf html `find . -name "*.o"` `find . -name "*.hi"` \
-		`find . -name "*~"` *.a setup dist testsrc/runtests \
+	-rm -rf html `find . -name "*.o"` `find . -name "*.hi" | grep -v debian` \
+		`find . -name "*~" | grep -v debian` *.a setup dist testsrc/runtests \
 		local-pkg doctmp
 	-rm -rf testtmp/* testtmp*
 
