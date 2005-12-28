@@ -1,6 +1,7 @@
+-- -*- mode: haskell; -*-
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- Above line for Hugs
-{- -*- mode:haskell; -*-
+{- 
 Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
 
 This program is free software; you can redistribute it and\/or modify
@@ -51,21 +52,24 @@ instance Show StoState where
 
 data SState = SState {dbo :: Sqlite3,
                       stomv :: MVar StoState,
-                      querys :: String}
+                      querys :: String,
+                      colnamesmv :: MVar [String]}
 
 newSth :: Sqlite3 -> String -> IO Statement               
 newSth indbo str = 
     do newstomv <- newMVar Empty
+       newcolnamesmv <- newMVar []
        let sstate = SState{dbo = indbo,
                            stomv = newstomv,
-                           querys = str}
+                           querys = str,
+                           colnamesmv = newcolnamesmv}
        modifyMVar_ (stomv sstate) (\_ -> (fprepare sstate >>= return . Prepared))
        return $ Statement {execute = fexecute sstate,
                            executeMany = fexecutemany sstate,
                            finish = public_ffinish sstate,
                            fetchRow = ffetchrow sstate,
                            originalQuery = str,
-                           getColumnNames = fgetcolumnnames sstate}
+                           getColumnNames = readMVar (colnamesmv sstate)}
 
 {- The deal with adding the \0 below is in response to an apparent bug in
 sqlite3.  See debian bug #343736. 
@@ -152,6 +156,7 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  sqlite3_reset p >>= checkError "execute (reset)" (dbo sstate)
                  zipWithM_ (bindArgs p) [1..c] args
                  r <- fstep (dbo sstate) p
+                 fgetcolnames p >>= swapMVar (colnamesmv sstate)
                  if r
                     then return (Executed sto, (-1))
                     else do ffinish (dbo sstate) sto
@@ -168,17 +173,10 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                                            (show i) ++ ")") (dbo sstate) r
              )
 
-fgetcolumnnames sstate = withMVar (stomv sstate) $ \sto -> 
-    case sto of
-        Empty -> throwDyn $ SqlError {seState = "HDBC Sqlite3 getColumnNames",
-                                      seNativeError = (-1),
-                                      seErrorMsg = "Attempt to get column names from non-available Statement.  Query was: " ++ (querys sstate)}
-        Prepared s -> withStmt s worker
-        Executed s -> withStmt s worker
-    where worker csth =
-              do count <- sqlite3_column_count csth
-                 mapM (getCol csth) [0..(count -1)]
-          getCol csth i =
+fgetcolnames csth =
+        do count <- sqlite3_column_count csth
+           mapM (getCol csth) [0..(count -1)]
+    where getCol csth i =
               do cstr <- sqlite3_column_name csth i
                  peekCString cstr
 
