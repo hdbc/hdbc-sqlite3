@@ -36,7 +36,7 @@ clean:
 	-rm -rf testtmp/* testtmp*
 
 testsrc/runtests: all $(wildcard testsrc/*.hs) $(wildcard testsrc/*/*.hs) $(wildcard testsrc/*/*/*.hs)
-	cd testsrc && ghc --make -package mtl -package HUnit -package HDBC -lsqlite3 ../dist/build/hdbc-sqlite3-helper.o $(GHCPARMS) -o runtests  -i../dist/build:.. runtests.hs
+	cd testsrc && ghc --make -package mtl -package HUnit -package HDBC -lsqlite3 ../dist/build/hdbc-sqlite3-helper.o $(GHCPARMS) -I.. -o runtests  -i../dist/build:.. runtests.hs
 
 test-ghc6: testsrc/runtests
 	testsrc/runtests
