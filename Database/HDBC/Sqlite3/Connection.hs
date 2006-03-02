@@ -31,6 +31,8 @@ import Foreign.Storable
 import Database.HDBC.Sqlite3.Utils
 import Foreign.ForeignPtr
 import Foreign.Ptr
+import System.Mem.Weak
+import Control.Concurrent.MVar
 
 {- | Connect to an Sqlite version 3 database.  The only parameter needed is
 the filename of the database to connect to.
@@ -52,24 +54,25 @@ connectSqlite3 fp =
 
 mkConn :: FilePath -> Sqlite3 -> IO Connection
 mkConn fp obj =
-    do begin_transaction obj
+    do children <- newMVar []
+       begin_transaction obj children
        ver <- (sqlite3_libversion >>= peekCString)
        return $ Connection {
-                            disconnect = fdisconnect obj,
-                            commit = fcommit obj,
-                            rollback = frollback obj,
-                            run = frun obj,
-                            prepare = newSth obj,
+                            disconnect = fdisconnect obj children,
+                            commit = fcommit obj children,
+                            rollback = frollback obj children,
+                            run = frun obj children,
+                            prepare = newSth obj children,
                             clone = connectSqlite3 fp,
                             hdbcDriverName = "sqlite3",
                             hdbcClientVer = ver,
                             proxiedClientName = "sqlite3",
                             proxiedClientVer = ver,
                             dbServerVer = ver,
-                            getTables = fgettables obj}
+                            getTables = fgettables obj children}
 
-fgettables o =
-    do sth <- newSth o "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+fgettables o mchildren =
+    do sth <- newSth o mchildren "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
        execute sth []
        res1 <- fetchAllRows sth
        let res = map fromSql $ concat res1
@@ -79,21 +82,33 @@ fgettables o =
 -- Guts here
 --------------------------------------------------
 
-begin_transaction :: Sqlite3 -> IO ()
-begin_transaction o = frun o "BEGIN" [] >> return ()
+begin_transaction :: Sqlite3 -> MVar [Weak Statement] -> IO ()
+begin_transaction o children = frun o children "BEGIN" [] >> return ()
 
-frun o query args =
-    do sth <- newSth o query
+frun o mchildren query args =
+    do sth <- newSth o mchildren query
        res <- execute sth args
        finish sth
        return res
 
-fcommit o = do frun o "COMMIT" []
-               begin_transaction o
-frollback o =  do frun o "ROLLBACK" []
-                  begin_transaction o
-fdisconnect o = withRawSqlite3 o (\p -> do r <- sqlite3_close p
-                                           checkError "disconnect" o r)
+fcommit o children = do frun o children "COMMIT" []
+                        begin_transaction o children
+frollback o children = do frun o children "ROLLBACK" []
+                          begin_transaction o children
+
+fdisconnect :: Sqlite3 -> MVar [Weak Statement] -> IO ()
+fdisconnect o mchildren = withRawSqlite3 o $ \p -> 
+    do children <- readMVar mchildren
+       mapM_ closefunc children
+       -- FIXME: potential race condition if newSth is called as we're
+       -- disconnecting?
+       r <- sqlite3_close p
+       checkError "disconnect" o r
+    where closefunc child =
+              do c <- deRefWeak child
+                 case c of
+                   Nothing -> return ()
+                   Just x -> finish x
 
 foreign import ccall unsafe "hdbc-sqlite3-helper.h sqlite3_open2"
   sqlite3_open :: CString -> (Ptr (Ptr CSqlite3)) -> IO CInt
