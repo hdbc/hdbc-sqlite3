@@ -4,7 +4,7 @@
 #include "hdbc-sqlite3-helper.h"
 
 int sqlite3_bind_text2(sqlite3_stmt* a, int b, const char *c, int d) {
-    sqlite3_bind_text(a, b, c, d, SQLITE_TRANSIENT);
+    return sqlite3_bind_text(a, b, c, d, SQLITE_TRANSIENT);
 }
 
 /* Sqlite things can't finalize more than once.  
@@ -61,6 +61,9 @@ void sqlite3_close_finalizer(finalizeonce *ppdb) {
 }
 
 void sqlite3_conditional_finalizer(finalizeonce *ppdb) {
+#ifdef DEBUG_HDBC_SQLITE3
+  fprintf(stderr, "\ncond finalizer on %p: refcount %d\n", ppdb, ppdb->refcount);
+#endif
   if (ppdb->refcount < 1) {
     sqlite3_close_app(ppdb);
     free(ppdb);
@@ -102,6 +105,7 @@ int sqlite3_prepare2(finalizeonce *fdb, const char *zSql,
   newobj->isfinalized = 0;
   newobj->parent = fdb;
   newobj->refcount = 1;
+  (fdb->refcount)++;
   *ppo = newobj;
 #ifdef DEBUG_HDBC_SQLITE3
   fprintf(stderr, "\nAllocated stmt at %p %p\n", newobj, newobj->encapobj);
