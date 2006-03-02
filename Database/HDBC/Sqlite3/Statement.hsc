@@ -97,7 +97,7 @@ been terminated.  (FIXME: should check this at runtime.... never run fprepare
 unless state is Empty)
 -}
 fprepare :: SState -> IO Stmt
-fprepare sstate = withSqlite3 (dbo sstate)
+fprepare sstate = withRawSqlite3 (dbo sstate)
   (\p -> withCStringLen ((querys sstate) ++ "\0")
    (\(cs, cslen) -> alloca
     (\(newp::Ptr (Ptr CStmt)) -> 

@@ -7,15 +7,18 @@ extern int sqlite3_bind_text2(sqlite3_stmt* a, int b, const char *c, int d);
 
 typedef struct TAG_finalizeonce {
   void *encapobj;
+  int refcount;
   int isfinalized;
+  struct TAG_finalizeonce *parent;
 } finalizeonce;
 
 
 extern int sqlite3_open2(const char *filename, finalizeonce **ppo);
 extern int sqlite3_close_app(finalizeonce *ppdb);
 extern void sqlite3_close_finalizer(finalizeonce *ppdb);
+extern void sqlite3_conditional_finalizer(finalizeonce *ppdb);
 
-extern int sqlite3_prepare2(sqlite3 *db, const char *zSql,
+extern int sqlite3_prepare2(finalizeonce *fdb, const char *zSql,
                             int nBytes, finalizeonce **ppo,
                             const char **pzTail);
 extern int sqlite3_finalize_app(finalizeonce *ppst);

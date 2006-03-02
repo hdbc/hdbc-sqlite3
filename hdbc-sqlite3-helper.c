@@ -27,6 +27,8 @@ int sqlite3_open2(const char *filename, finalizeonce **ppo) {
   }
   newobj->encapobj = (void *) ppDb;
   newobj->isfinalized = 0;
+  newobj->refcount = 1;
+  newobj->parent = NULL;
   *ppo = newobj;
 #ifdef DEBUG_HDBC_SQLITE3
   fprintf(stderr, "\nAllocated db at %p %p\n", newobj, newobj->encapobj);
@@ -54,17 +56,27 @@ void sqlite3_close_finalizer(finalizeonce *ppdb) {
 #ifdef DEBUG_HDBC_SQLITE3
   fprintf(stderr, "\nclose_finalizer on %p: %d\n", ppdb, ppdb->isfinalized);
 #endif
-  sqlite3_close_app(ppdb);
-  free(ppdb);
+  (ppdb->refcount)--;
+  sqlite3_conditional_finalizer(ppdb);
 }
 
-int sqlite3_prepare2(sqlite3 *db, const char *zSql,
+void sqlite3_conditional_finalizer(finalizeonce *ppdb) {
+  if (ppdb->refcount < 1) {
+    sqlite3_close_app(ppdb);
+    free(ppdb);
+  }
+}
+
+int sqlite3_prepare2(finalizeonce *fdb, const char *zSql,
                      int nBytes, finalizeonce **ppo,
                      const char **pzTail) {
 
   sqlite3_stmt *ppst;
+  sqlite3 *db;
   finalizeonce *newobj;
   int res;
+
+  db = (sqlite3 *) fdb->encapobj;
 
 #ifdef DEBUG_HDBC_SQLITE3
   fprintf(stderr, "\nCalling prepare on %p", db);
@@ -88,6 +100,8 @@ int sqlite3_prepare2(sqlite3 *db, const char *zSql,
   }
   newobj->encapobj = (void *) ppst;
   newobj->isfinalized = 0;
+  newobj->parent = fdb;
+  newobj->refcount = 1;
   *ppo = newobj;
 #ifdef DEBUG_HDBC_SQLITE3
   fprintf(stderr, "\nAllocated stmt at %p %p\n", newobj, newobj->encapobj);
@@ -116,5 +130,10 @@ void sqlite3_finalize_finalizer(finalizeonce *ppst) {
   fprintf(stderr, "\nfinalize_finalizer on %p: %d\n", ppst, ppst->isfinalized);
 #endif
   sqlite3_finalize_app(ppst);
+  (ppst->refcount)--;           /* Not really important since no children use 
+                                   us */
+  /* Now decrement the refcount for the parent */
+  (ppst->parent->refcount)--;
+  sqlite3_conditional_finalizer(ppst->parent);
   free(ppst);
 }
