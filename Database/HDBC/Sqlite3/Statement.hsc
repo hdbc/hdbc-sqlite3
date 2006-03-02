@@ -34,7 +34,7 @@ import Foreign.Storable
 import Control.Monad
 import Data.List
 import Control.Exception
-import System.Mem.Weak
+import Database.HDBC.DriverUtils
 
 #include <sqlite3.h>
 
@@ -56,7 +56,7 @@ data SState = SState {dbo :: Sqlite3,
                       querys :: String,
                       colnamesmv :: MVar [String]}
 
-newSth :: Sqlite3 -> MVar [Weak Statement] -> String -> IO Statement
+newSth :: Sqlite3 -> ChildList -> String -> IO Statement
 newSth indbo mchildren str = 
     do newstomv <- newMVar Empty
        newcolnamesmv <- newMVar []
@@ -72,22 +72,8 @@ newSth indbo mchildren str =
                            fetchRow = ffetchrow sstate,
                            originalQuery = str,
                            getColumnNames = readMVar (colnamesmv sstate)}
-       weakptr <- mkWeakPtr retval (Just (filterchildren mchildren))
-       modifyMVar_ mchildren (\l -> return (weakptr : l))
+       addChild mchildren retval
        return retval
-
-filterchildren mc = 
-    do c <- tryTakeMVar mc
-       case c of
-         Nothing -> return ()
-         Just cl -> do newlist <- filterM filterfunc cl
-                       tryPutMVar mc newlist
-                       return ()
-    where filterfunc c =
-              do dc <- deRefWeak c
-                 case dc of
-                   Nothing -> return False
-                   Just _ -> return True
 
 {- The deal with adding the \0 below is in response to an apparent bug in
 sqlite3.  See debian bug #343736. 

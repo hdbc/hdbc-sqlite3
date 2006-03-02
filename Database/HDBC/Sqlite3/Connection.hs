@@ -22,6 +22,7 @@ module Database.HDBC.Sqlite3.Connection where
 
 import Database.HDBC.Types
 import Database.HDBC
+import Database.HDBC.DriverUtils
 import Database.HDBC.Sqlite3.Types
 import Database.HDBC.Sqlite3.Statement
 import Foreign.C.Types
@@ -31,7 +32,6 @@ import Foreign.Storable
 import Database.HDBC.Sqlite3.Utils
 import Foreign.ForeignPtr
 import Foreign.Ptr
-import System.Mem.Weak
 import Control.Concurrent.MVar
 
 {- | Connect to an Sqlite version 3 database.  The only parameter needed is
@@ -82,7 +82,7 @@ fgettables o mchildren =
 -- Guts here
 --------------------------------------------------
 
-begin_transaction :: Sqlite3 -> MVar [Weak Statement] -> IO ()
+begin_transaction :: Sqlite3 -> ChildList -> IO ()
 begin_transaction o children = frun o children "BEGIN" [] >> return ()
 
 frun o mchildren query args =
@@ -96,19 +96,11 @@ fcommit o children = do frun o children "COMMIT" []
 frollback o children = do frun o children "ROLLBACK" []
                           begin_transaction o children
 
-fdisconnect :: Sqlite3 -> MVar [Weak Statement] -> IO ()
+fdisconnect :: Sqlite3 -> ChildList -> IO ()
 fdisconnect o mchildren = withRawSqlite3 o $ \p -> 
-    do children <- readMVar mchildren
-       mapM_ closefunc children
-       -- FIXME: potential race condition if newSth is called as we're
-       -- disconnecting?
+    do closeAllChildren mchildren
        r <- sqlite3_close p
        checkError "disconnect" o r
-    where closefunc child =
-              do c <- deRefWeak child
-                 case c of
-                   Nothing -> return ()
-                   Just x -> finish x
 
 foreign import ccall unsafe "hdbc-sqlite3-helper.h sqlite3_open2"
   sqlite3_open :: CString -> (Ptr (Ptr CSqlite3)) -> IO CInt
