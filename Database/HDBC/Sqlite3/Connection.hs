@@ -69,7 +69,8 @@ mkConn fp obj =
                             proxiedClientName = "sqlite3",
                             proxiedClientVer = ver,
                             dbServerVer = ver,
-                            getTables = fgettables obj children}
+                            getTables = fgettables obj children,
+                            describeTable = \_ -> fail $ "Sqlite3 backend does not support describeTable"}
 
 fgettables o mchildren =
     do sth <- newSth o mchildren "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"

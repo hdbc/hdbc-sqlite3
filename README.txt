@@ -24,6 +24,8 @@ On the topic of thread safety, SQLite has some limitations, and thus
 HDBC programs that use SQLite will share those limitations.  Please
 see http://www.sqlite.org/faq.html#q8 for more details.
 
+describeTable and describeResult are not supported by this module.
+
 PREREQUISITES
 -------------
 

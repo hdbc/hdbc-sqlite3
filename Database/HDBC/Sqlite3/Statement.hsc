@@ -71,7 +71,8 @@ newSth indbo mchildren str =
                            finish = public_ffinish sstate,
                            fetchRow = ffetchrow sstate,
                            originalQuery = str,
-                           getColumnNames = readMVar (colnamesmv sstate)}
+                           getColumnNames = readMVar (colnamesmv sstate),
+                           describeResult = fail "Sqlite3 backend does not support describeResult"}
        addChild mchildren retval
        return retval
 
