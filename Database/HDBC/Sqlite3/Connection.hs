@@ -68,6 +68,7 @@ mkConn fp obj =
                             hdbcClientVer = ver,
                             proxiedClientName = "sqlite3",
                             proxiedClientVer = ver,
+                            dbTransactionSupport = True,
                             dbServerVer = ver,
                             getTables = fgettables obj children,
                             describeTable = \_ -> fail $ "Sqlite3 backend does not support describeTable"}

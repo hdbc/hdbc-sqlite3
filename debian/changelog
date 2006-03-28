@@ -1,3 +1,9 @@
+hdbc-sqlite3 (0.99.2.0) unstable; urgency=low
+
+  * Updated to 0.99.2.
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 28 Mar 2006 05:36:18 -0600
+
 hdbc-sqlite3 (0.99.1.0) unstable; urgency=low
 
   * New 0.99.1.0 release: new memory management system.

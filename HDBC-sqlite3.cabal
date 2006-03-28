@@ -1,6 +1,6 @@
 Extra-Libraries: sqlite3
 Name: HDBC-sqlite3
-Version: 0.99.1.0
+Version: 0.99.2.0
 License: LGPL
 Maintainer: John Goerzen <jgoerzen@complete.org>
 Stability: Alpha
@@ -14,6 +14,6 @@ Other-Modules: Database.HDBC.Sqlite3.Connection,
 --    AllowUndecidableInstances, CPP
 Extensions: ExistentialQuantification
 C-Sources: hdbc-sqlite3-helper.c
-Build-Depends: base, mtl, HDBC>=0.99.1
+Build-Depends: base, mtl, HDBC>=0.99.2
 include-dirs: .
 GHC-Options: -O2
