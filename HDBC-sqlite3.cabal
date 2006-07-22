@@ -1,6 +1,6 @@
 Extra-Libraries: sqlite3
 Name: HDBC-sqlite3
-Version: 1.0.0.0
+Version: 1.0.1.0
 License: LGPL
 Maintainer: John Goerzen <jgoerzen@complete.org>
 Stability: Alpha
