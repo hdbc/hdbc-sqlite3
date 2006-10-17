@@ -42,7 +42,7 @@ import Database.HDBC.DriverUtils
 fail if there are any active statements.  This is highly annoying, and makes
 for some somewhat complex algorithms. -}
 
-data StoState = Empty           -- ^ Not initialized or last execute/fetchrow had no results
+data StoState = Empty           -- ^ Not initialized or last execute\/fetchrow had no results
               | Prepared Stmt   -- ^ Prepared but not executed
               | Executed Stmt   -- ^ Executed and more rows are expected
 
