@@ -42,10 +42,10 @@ test-ghc6: testsrc/runtests
 	testsrc/runtests
 
 test-hugs: hugsbuild
-	runhugs -98 +o -P$(PWD)/dist/build:$(PWD)/testsrc: testsrc/runtests.hs
+	runhugs -98 +o -P$(CURDIR)/dist/build:$(CURDIR)/testsrc: testsrc/runtests.hs
 
 interact-hugs:
-	hugs -98 +o -P$(PWD)/dist/build:
+	hugs -98 +o -P$(CURDIR)/dist/build:
 
 interact-ghci: all
 	ghci -idist/build -Ldist/build $(GHCPARMS)
