@@ -32,10 +32,10 @@ Written by John Goerzen, jgoerzen\@complete.org
 
 module Database.HDBC.Sqlite3
     (
-     connectSqlite3
+     connectSqlite3, Connection()
     )
 
 where
 
-import Database.HDBC.Sqlite3.Connection(connectSqlite3)
+import Database.HDBC.Sqlite3.Connection(connectSqlite3, Connection())
 

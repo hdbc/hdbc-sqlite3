@@ -18,11 +18,14 @@ Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -}
 
-module Database.HDBC.Sqlite3.Connection where
+module Database.HDBC.Sqlite3.Connection 
+	(connectSqlite3, Impl.Connection())
+ where
 
 import Database.HDBC.Types
 import Database.HDBC
 import Database.HDBC.DriverUtils
+import qualified Database.HDBC.Sqlite3.ConnectionImpl as Impl
 import Database.HDBC.Sqlite3.Types
 import Database.HDBC.Sqlite3.Statement
 import Foreign.C.Types
@@ -38,7 +41,7 @@ import Control.Concurrent.MVar
 the filename of the database to connect to.
 
 All database accessor functions are provided in the main HDBC module. -}
-connectSqlite3 :: FilePath -> IO Connection
+connectSqlite3 :: FilePath -> IO Impl.Connection
 connectSqlite3 fp = 
     withCString fp 
         (\cs -> alloca 
@@ -52,26 +55,26 @@ connectSqlite3 fp =
          )
         )
 
-mkConn :: FilePath -> Sqlite3 -> IO Connection
+mkConn :: FilePath -> Sqlite3 -> IO Impl.Connection
 mkConn fp obj =
     do children <- newMVar []
        begin_transaction obj children
        ver <- (sqlite3_libversion >>= peekCString)
-       return $ Connection {
-                            disconnect = fdisconnect obj children,
-                            commit = fcommit obj children,
-                            rollback = frollback obj children,
-                            run = frun obj children,
-                            prepare = newSth obj children,
-                            clone = connectSqlite3 fp,
-                            hdbcDriverName = "sqlite3",
-                            hdbcClientVer = ver,
-                            proxiedClientName = "sqlite3",
-                            proxiedClientVer = ver,
-                            dbTransactionSupport = True,
-                            dbServerVer = ver,
-                            getTables = fgettables obj children,
-                            describeTable = \_ -> fail $ "Sqlite3 backend does not support describeTable"}
+       return $ Impl.Connection {
+                            Impl.disconnect = fdisconnect obj children,
+                            Impl.commit = fcommit obj children,
+                            Impl.rollback = frollback obj children,
+                            Impl.run = frun obj children,
+                            Impl.prepare = newSth obj children,
+                            Impl.clone = connectSqlite3 fp,
+                            Impl.hdbcDriverName = "sqlite3",
+                            Impl.hdbcClientVer = ver,
+                            Impl.proxiedClientName = "sqlite3",
+                            Impl.proxiedClientVer = ver,
+                            Impl.dbTransactionSupport = True,
+                            Impl.dbServerVer = ver,
+                            Impl.getTables = fgettables obj children,
+                            Impl.describeTable = \_ -> fail $ "Sqlite3 backend does not support describeTable"}
 
 fgettables o mchildren =
     do sth <- newSth o mchildren "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
