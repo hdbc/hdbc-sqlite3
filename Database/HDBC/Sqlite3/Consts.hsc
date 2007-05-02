@@ -19,87 +19,139 @@ Copyright (C) 2005-2007 John Goerzen <jgoerzen@complete.org>
 -}
 
 module Database.HDBC.Sqlite3.Consts
- (sqlite_OK) where
+ (sqlite_OK,
+  sqlite_ERROR,
+  sqlite_INTERNAL,
+  sqlite_PERM,
+  sqlite_ABORT,
+  sqlite_BUSY,
+  sqlite_LOCKED,
+  sqlite_NOMEM,
+  sqlite_READONLY,
+  sqlite_INTERRUPT,
+  sqlite_IOERR,
+  sqlite_CORRUPT,
+  sqlite_NOTFOUND,
+  sqlite_FULL,
+  sqlite_CANTOPEN,
+  sqlite_PROTOCOL,
+  sqlite_EMPTY,
+  sqlite_SCHEMA,
+  sqlite_TOOBIG,
+  sqlite_CONSTRAINT,
+  sqlite_MISMATCH,
+  sqlite_MISUSE,
+  sqlite_NOLFS,
+  sqlite_AUTH,
+  sqlite_ROW,
+  sqlite_DONE)
+where
 
 import Foreign.C.Types
 
 #include <sqlite3.h>
 
-sqlite_OK :: Int -- | Successful result
+-- | Successful result
+sqlite_OK :: Int
 sqlite_OK = #{const SQLITE_OK}
 
-sqlite_ERROR :: Int -- | SQL error or missing database
+-- | SQL error or missing database
+sqlite_ERROR :: Int
 sqlite_ERROR = #{const SQLITE_ERROR}
 
-sqlite_INTERNAL :: Int -- | An internal logic error in SQLite
+-- | An internal logic error in SQLite
+sqlite_INTERNAL :: Int
 sqlite_INTERNAL = #{const SQLITE_INTERNAL}
 
-sqlite_PERM :: Int -- | Access permission denied
+-- | Access permission denied
+sqlite_PERM :: Int
 sqlite_PERM = #{const SQLITE_PERM}
 
-sqlite_ABORT :: Int -- | Callback routine requested an abort
+-- | Callback routine requested an abort
+sqlite_ABORT :: Int
 sqlite_ABORT = #{const SQLITE_ABORT}
 
-sqlite_BUSY :: Int -- | The database file is locked
+-- | The database file is locked
+sqlite_BUSY :: Int
 sqlite_BUSY = #{const SQLITE_BUSY}
 
-sqlite_LOCKED :: Int -- | A table in the database is locked
+-- | A table in the database is locked
+sqlite_LOCKED :: Int
 sqlite_LOCKED = #{const SQLITE_LOCKED}
 
-sqlite_NOMEM :: Int -- | A malloc() failed
+-- | A malloc() failed
+sqlite_NOMEM :: Int
 sqlite_NOMEM = #{const SQLITE_NOMEM}
 
-sqlite_READONLY :: Int -- | Attempt to write a readonly database
+-- | Attempt to write a readonly database
+sqlite_READONLY :: Int
 sqlite_READONLY = #{const SQLITE_READONLY}
 
-sqlite_INTERRUPT :: Int -- | Operation terminated by sqlite_interrupt()
+-- | Operation terminated by sqlite_interrupt()
+sqlite_INTERRUPT :: Int
 sqlite_INTERRUPT = #{const SQLITE_INTERRUPT}
 
-sqlite_IOERR :: Int -- | Some kind of disk I/O error occurred
+-- | Some kind of disk I\/O error occurred
+sqlite_IOERR :: Int
 sqlite_IOERR = #{const SQLITE_IOERR}
 
-sqlite_CORRUPT :: Int -- | The database disk image is malformed
+-- | The database disk image is malformed
+sqlite_CORRUPT :: Int
 sqlite_CORRUPT = #{const SQLITE_CORRUPT}
 
-sqlite_NOTFOUND :: Int -- | (Internal Only) Table or record not found
+-- | (Internal Only) Table or record not found
+sqlite_NOTFOUND :: Int
 sqlite_NOTFOUND = #{const SQLITE_NOTFOUND}
 
-sqlite_FULL :: Int -- | Insertion failed because database is full
+-- | Insertion failed because database is full
+sqlite_FULL :: Int
 sqlite_FULL = #{const SQLITE_FULL}
 
-sqlite_CANTOPEN :: Int -- | Unable to open the database file
+-- | Unable to open the database file
+sqlite_CANTOPEN :: Int
 sqlite_CANTOPEN = #{const SQLITE_CANTOPEN}
 
-sqlite_PROTOCOL :: Int -- | Database lock protocol error
+-- | Database lock protocol error
+sqlite_PROTOCOL :: Int
 sqlite_PROTOCOL = #{const SQLITE_PROTOCOL}
 
-sqlite_EMPTY :: Int -- | (Internal Only) Database table is empty
+-- | (Internal Only) Database table is empty
+sqlite_EMPTY :: Int
 sqlite_EMPTY = #{const SQLITE_EMPTY}
 
-sqlite_SCHEMA :: Int -- | The database schema changed
+-- | The database schema changed
+sqlite_SCHEMA :: Int
 sqlite_SCHEMA = #{const SQLITE_SCHEMA}
 
-sqlite_TOOBIG :: Int -- | Too much data for one row of a table
+-- | Too much data for one row of a table
+sqlite_TOOBIG :: Int
 sqlite_TOOBIG = #{const SQLITE_TOOBIG}
 
-sqlite_CONSTRAINT :: Int -- | Abort due to constraint violation
+-- | Abort due to constraint violation
+sqlite_CONSTRAINT :: Int
 sqlite_CONSTRAINT = #{const SQLITE_CONSTRAINT}
 
-sqlite_MISMATCH :: Int -- | Data type mismatch
+-- | Data type mismatch
+sqlite_MISMATCH :: Int
 sqlite_MISMATCH = #{const SQLITE_MISMATCH}
 
-sqlite_MISUSE :: Int -- | Library used incorrectly
+-- | Library used incorrectly
+sqlite_MISUSE :: Int
 sqlite_MISUSE = #{const SQLITE_MISUSE}
 
-sqlite_NOLFS :: Int -- | Uses OS features not supported on host
+-- | Uses OS features not supported on host
+sqlite_NOLFS :: Int
 sqlite_NOLFS = #{const SQLITE_NOLFS}
 
-sqlite_AUTH :: Int -- | Authorization denied
+-- | Authorization denied
+sqlite_AUTH :: Int
 sqlite_AUTH = #{const SQLITE_AUTH}
 
-sqlite_ROW :: Int -- | sqlite_step() has another row ready
+-- | sqlite_step() has another row ready
+sqlite_ROW :: Int
 sqlite_ROW = #{const SQLITE_ROW}
 
-sqlite_DONE :: Int -- | sqlite_step() has finished executing
+-- | sqlite_step() has finished executing
+sqlite_DONE :: Int
 sqlite_DONE = #{const SQLITE_DONE}
 
