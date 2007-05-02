@@ -1,7 +1,7 @@
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- above line for hugs
 {-
-Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005-2007 John Goerzen <jgoerzen@complete.org>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -74,7 +74,8 @@ mkConn fp obj =
                             Impl.dbTransactionSupport = True,
                             Impl.dbServerVer = ver,
                             Impl.getTables = fgettables obj children,
-                            Impl.describeTable = \_ -> fail $ "Sqlite3 backend does not support describeTable"}
+                            Impl.describeTable = \_ -> fail $ "Sqlite3 backend does not support describeTable",
+                            Impl.setBusyTimeout = fsetbusy obj}
 
 fgettables o mchildren =
     do sth <- newSth o mchildren "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
@@ -82,6 +83,9 @@ fgettables o mchildren =
        res1 <- fetchAllRows sth
        let res = map fromSql $ concat res1
        return $ seq (length res) res
+
+fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
+    sqlite3_busy_timeout ppdb ms
 
 --------------------------------------------------
 -- Guts here
@@ -115,6 +119,9 @@ foreign import ccall unsafe "hdbc-sqlite3-helper.h &sqlite3_close_finalizer"
 
 foreign import ccall unsafe "hdbc-sqlite3-helper.h sqlite3_close_app"
   sqlite3_close :: Ptr CSqlite3 -> IO CInt
+
+foreign import ccall unsafe "hdbc-sqlite3-helper.h sqlite3_busy_timeout2"
+  sqlite3_busy_timeout :: Ptr CSqlite3 -> CInt -> IO ()
 
 foreign import ccall unsafe "sqlite3.h sqlite3_libversion"
   sqlite3_libversion :: IO CString

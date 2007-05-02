@@ -18,6 +18,7 @@ extern int sqlite3_close_app(finalizeonce *ppdb);
 extern void sqlite3_close_finalizer(finalizeonce *ppdb);
 extern void sqlite3_conditional_finalizer(finalizeonce *ppdb);
 
+extern void sqlite3_busy_timeout2(finalizeonce *ppdb, int ms);
 extern int sqlite3_prepare2(finalizeonce *fdb, const char *zSql,
                             int nBytes, finalizeonce **ppo,
                             const char **pzTail);

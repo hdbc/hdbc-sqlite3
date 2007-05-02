@@ -20,6 +20,7 @@ module Database.HDBC.Sqlite3.ConnectionImpl where
 import qualified Database.HDBC.Statement as Types
 import qualified Database.HDBC.Types as Types
 import Database.HDBC.ColTypes as ColTypes
+import Foreign.C.Types
 
 data Connection = 
     Connection {
@@ -36,7 +37,8 @@ data Connection =
                 dbServerVer :: String,
                 dbTransactionSupport :: Bool,
                 getTables :: IO [String],
-                describeTable :: String -> IO [(String, ColTypes.SqlColDesc)]
+                describeTable :: String -> IO [(String, ColTypes.SqlColDesc)],
+                setBusyTimeout :: CInt -> IO ()
                }
 
 instance Types.IConnection Connection where

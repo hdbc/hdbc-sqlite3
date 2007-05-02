@@ -1,5 +1,5 @@
 {-
-Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005-2007 John Goerzen <jgoerzen@complete.org>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@ Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
 
 {- |
    Module     : Database.HDBC.Sqlite3
-   Copyright  : Copyright (C) 2005 John Goerzen
+   Copyright  : Copyright (C) 2005-2007 John Goerzen
    License    : GNU LGPL, version 2.1 or above
 
    Maintainer : John Goerzen <jgoerzen@complete.org>
@@ -32,10 +32,14 @@ Written by John Goerzen, jgoerzen\@complete.org
 
 module Database.HDBC.Sqlite3
     (
-     connectSqlite3, Connection()
+    -- * Sqlite3 Basics
+     connectSqlite3, Connection(), setBusyTimeout,
+    -- * Sqlite3 Error Consts
+    module Database.HDBC.Sqlite3.Consts
     )
 
 where
 
 import Database.HDBC.Sqlite3.Connection(connectSqlite3, Connection())
-
+import Database.HDBC.Sqlite3.ConnectionImpl(setBusyTimeout)
+import Database.HDBC.Sqlite3.Consts

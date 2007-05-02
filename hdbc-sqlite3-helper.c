@@ -70,6 +70,13 @@ void sqlite3_conditional_finalizer(finalizeonce *ppdb) {
   }
 }
 
+void sqlite3_busy_timeout2(finalizeonce *ppdb, int ms) {
+    sqlite3 *db;
+
+    db = (sqlite3 *) ppdb->encapobj;
+    sqlite3_busy_timeout(db, ms);
+}
+
 int sqlite3_prepare2(finalizeonce *fdb, const char *zSql,
                      int nBytes, finalizeonce **ppo,
                      const char **pzTail) {
