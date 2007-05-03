@@ -2,6 +2,8 @@ hdbc-sqlite3 (1.1.0.0) unstable; urgency=low
 
   * New API thanks to Peter Thiemann.
   * Added libhugs-hunit to build-deps.  Closes: #419615.
+  * Added ability to set behavior on busy.
+  * Added error code consts.
 
  -- John Goerzen <jgoerzen@complete.org>  Wed, 02 May 2007 06:04:05 -0500
 
