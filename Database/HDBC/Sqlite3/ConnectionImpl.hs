@@ -38,6 +38,8 @@ data Connection =
                 dbTransactionSupport :: Bool,
                 getTables :: IO [String],
                 describeTable :: String -> IO [(String, ColTypes.SqlColDesc)],
+                -- | Sets the timeout for a lock before returning a busy error.
+                -- Give the time in milliseconds.
                 setBusyTimeout :: CInt -> IO ()
                }
 
