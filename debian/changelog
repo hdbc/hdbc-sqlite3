@@ -1,3 +1,9 @@
+hdbc-sqlite3 (1.1.1.0) unstable; urgency=low
+
+  * Update for new HDBC.
+
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 03 May 2007 04:15:36 -0500
+
 hdbc-sqlite3 (1.1.0.0) unstable; urgency=low
 
   * New API thanks to Peter Thiemann.
