@@ -32,6 +32,7 @@ import Foreign.C.String
 import Foreign.Marshal
 import Foreign.Storable
 import Control.Monad
+import qualified Data.ByteString as B
 import Data.List
 import Control.Exception
 import Database.HDBC.DriverUtils
@@ -185,12 +186,14 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
               sqlite3_bind_null p i >>= 
                 checkError ("execute (binding NULL column " ++ (show i) ++ ")")
                            (dbo sstate)
-          bindArgs p i arg = withCStringLen (fromSql arg) 
-             (\(cs, len) -> do r <- sqlite3_bind_text2 p i cs 
-                                    (fromIntegral len)
-                               checkError ("execute (binding column " ++ 
-                                           (show i) ++ ")") (dbo sstate) r
-             )
+          bindArgs p i (SqlByteString bs) =
+              B.useAsCStringLen bs (bindCStringArgs p i)
+          bindArgs p i arg = withCStringLen (fromSql arg) (bindCStringArgs p i)
+
+          bindCStringArgs p i (cs, len) =
+              do r <- sqlite3_bind_text2 p i cs (fromIntegral len)
+                 checkError ("execute (binding column " ++ 
+                             (show i) ++ ")") (dbo sstate) r
 
 fgetcolnames csth =
         do count <- sqlite3_column_count csth
