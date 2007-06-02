@@ -179,7 +179,8 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  fgetcolnames p >>= swapMVar (colnamesmv sstate)
                  if r
                     then return (Executed sto, fromIntegral changes)
-                    else return (Prepared sto, fromIntegral changes)
+                    else do ffinish (dbo sstate) sto
+                            return (Empty, fromIntegral changes)
                                                         )
           bindArgs p i SqlNull =
               sqlite3_bind_null p i >>= 
