@@ -80,7 +80,7 @@ mkConn fp obj =
 fgettables o mchildren =
     do sth <- newSth o mchildren "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
        execute sth []
-       res1 <- fetchAllRows sth
+       res1 <- fetchAllRows' sth
        let res = map fromSql $ concat res1
        return $ seq (length res) res
 
