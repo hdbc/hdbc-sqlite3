@@ -84,10 +84,10 @@ testExecuteMany = dbTestCase (\dbh ->
                   [toSql "3", SqlNull, SqlNull]]
 
 testFetchAllRows = dbTestCase (\dbh ->
-    do sth <- prepare dbh "INSERT INTO hdbctest1 VALUES ('sFetchAllRows', ?, NULL, NULL)"
+    do sth <- prepare dbh "INSERT INTO hdbctest1 VALUES ('fetchAllRows', ?, NULL, NULL)"
        executeMany sth rows
        commit dbh
-       sth <- prepare dbh "SELECT testid FROM hdbctest1 WHERE testname = 'sFetchAllRows' ORDER BY testid"
+       sth <- prepare dbh "SELECT testid FROM hdbctest1 WHERE testname = 'fetchAllRows' ORDER BY testid"
        execute sth []
        results <- fetchAllRows sth
        assertEqual "" rows results
@@ -95,10 +95,10 @@ testFetchAllRows = dbTestCase (\dbh ->
     where rows = map (\x -> [iToSql x]) [1..9]
 
 testFetchAllRows' = dbTestCase (\dbh ->
-    do sth <- prepare dbh "INSERT INTO hdbctest1 VALUES ('sFetchAllRows2', ?, NULL, NULL)"
+    do sth <- prepare dbh "INSERT INTO hdbctest1 VALUES ('fetchAllRows2', ?, NULL, NULL)"
        executeMany sth rows
        commit dbh
-       sth <- prepare dbh "SELECT testid FROM hdbctest1 WHERE testname = 'sFetchAllRows2' ORDER BY testid"
+       sth <- prepare dbh "SELECT testid FROM hdbctest1 WHERE testname = 'fetchAllRows2' ORDER BY testid"
        execute sth []
        results <- fetchAllRows' sth
        assertEqual "" rows results
