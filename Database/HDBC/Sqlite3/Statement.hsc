@@ -46,25 +46,29 @@ for some somewhat complex algorithms. -}
 data StoState = Empty           -- ^ Not initialized or last execute\/fetchrow had no results
               | Prepared Stmt   -- ^ Prepared but not executed
               | Executed Stmt   -- ^ Executed and more rows are expected
+              | Exhausted Stmt  -- ^ Executed and at end of rows
 
 instance Show StoState where
     show Empty = "Empty"
     show (Prepared _) = "Prepared"
     show (Executed _) = "Executed"
+    show (Exhausted _) = "Exhausted"
 
 data SState = SState {dbo :: Sqlite3,
                       stomv :: MVar StoState,
                       querys :: String,
-                      colnamesmv :: MVar [String]}
+                      colnamesmv :: MVar [String],
+                      autoFinish :: Bool}
 
-newSth :: Sqlite3 -> ChildList -> String -> IO Statement
-newSth indbo mchildren str = 
+newSth :: Sqlite3 -> ChildList -> Bool -> String -> IO Statement
+newSth indbo mchildren autoFinish str = 
     do newstomv <- newMVar Empty
        newcolnamesmv <- newMVar []
        let sstate = SState{dbo = indbo,
                            stomv = newstomv,
                            querys = str,
-                           colnamesmv = newcolnamesmv}
+                           colnamesmv = newcolnamesmv,
+                           autoFinish = autoFinish}
        modifyMVar_ (stomv sstate) (\_ -> (fprepare sstate >>= return . Prepared))
        let retval = 
                Statement {execute = fexecute sstate,
@@ -120,9 +124,12 @@ ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
                  r <- fstep (dbo sstate) p
                  if r
                     then return (Executed sto, Just res)
-                    else do ffinish (dbo sstate) sto
-                            return (Empty, Just res)
-                                                         )
+                    else if (autoFinish sstate)
+                            then do ffinish (dbo sstate) sto
+                                    return (Empty, Just res)
+                            else return (Exhausted sto, Just res)
+                                                          )
+          dofetchrow (Exhausted sto) = return (Exhausted sto, Nothing)
  
           getCol p icol = 
              do t <- sqlite3_column_type p icol
@@ -149,7 +156,8 @@ fstep dbo p =
                                    seErrorMsg = "In HDBC step, unexpected result from sqlite3_step"}
 
 fexecute sstate args = modifyMVar (stomv sstate) doexecute
-    where doexecute (Executed sto) = ffinish (dbo sstate) sto >> doexecute Empty
+    where doexecute (Executed sto) = doexecute (Prepared sto)
+          doexecute (Exhausted sto) = doexecute (Prepared sto)
           doexecute Empty =     -- already cleaned up from last time
               do sto <- fprepare sstate
                  doexecute (Prepared sto)
@@ -179,8 +187,10 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  fgetcolnames p >>= swapMVar (colnamesmv sstate)
                  if r
                     then return (Executed sto, fromIntegral changes)
-                    else do ffinish (dbo sstate) sto
-                            return (Empty, fromIntegral changes)
+                    else if (autoFinish sstate)
+                            then do ffinish (dbo sstate) sto
+                                    return (Empty, fromIntegral changes)
+                            else return (Exhausted sto, fromIntegral changes)
                                                         )
           bindArgs p i SqlNull =
               sqlite3_bind_null p i >>= 
@@ -202,9 +212,13 @@ fgetcolnames csth =
               do cstr <- sqlite3_column_name csth i
                  peekCString cstr
 
--- FIXME: needs a faster algorithm.
-fexecutemany sstate arglist =
-    mapM_ (fexecute sstate) arglist
+fexecutemany _ [] = return ()
+fexecutemany sstate (args:[]) = 
+    do fexecute sstate args
+       return ()
+fexecutemany sstate (args:arglist) =
+    do fexecute (sstate { autoFinish = False }) args
+       fexecutemany sstate arglist
 
 --ffinish o = withForeignPtr o (\p -> sqlite3_finalize p >>= checkError "finish")
 -- Finish and change state
@@ -212,6 +226,7 @@ public_ffinish sstate = modifyMVar_ (stomv sstate) worker
     where worker (Empty) = return Empty
           worker (Prepared sto) = ffinish (dbo sstate) sto >> return Empty
           worker (Executed sto) = ffinish (dbo sstate) sto >> return Empty
+          worker (Exhausted sto) = ffinish (dbo sstate) sto >> return Empty
     
 ffinish dbo o = withRawStmt o (\p -> do r <- sqlite3_finalize p
                                         checkError "finish" dbo r)

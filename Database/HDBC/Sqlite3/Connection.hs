@@ -65,7 +65,7 @@ mkConn fp obj =
                             Impl.commit = fcommit obj children,
                             Impl.rollback = frollback obj children,
                             Impl.run = frun obj children,
-                            Impl.prepare = newSth obj children,
+                            Impl.prepare = newSth obj children True,
                             Impl.clone = connectSqlite3 fp,
                             Impl.hdbcDriverName = "sqlite3",
                             Impl.hdbcClientVer = ver,
@@ -78,7 +78,7 @@ mkConn fp obj =
                             Impl.setBusyTimeout = fsetbusy obj}
 
 fgettables o mchildren =
-    do sth <- newSth o mchildren "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+    do sth <- newSth o mchildren True "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
        execute sth []
        res1 <- fetchAllRows' sth
        let res = map fromSql $ concat res1
@@ -95,7 +95,7 @@ begin_transaction :: Sqlite3 -> ChildList -> IO ()
 begin_transaction o children = frun o children "BEGIN" [] >> return ()
 
 frun o mchildren query args =
-    do sth <- newSth o mchildren query
+    do sth <- newSth o mchildren False query
        res <- execute sth args
        finish sth
        return res
