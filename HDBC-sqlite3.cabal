@@ -11,10 +11,12 @@ synopsis: Sqlite v3 driver for HDBC
 Description: This is the Sqlite v3 driver for HDBC, the generic
  database access system for Haskell
 Stability: Stable
+Build-Type: Simple
 Cabal-Version: >=1.2
 
 Flag splitBase
   description: Choose the new smaller, split-up package.
+
 Library
   if flag(splitBase)
     Build-Depends: base>=3, bytestring
