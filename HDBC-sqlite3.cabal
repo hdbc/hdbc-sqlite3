@@ -35,4 +35,5 @@ Library
    Database.HDBC.Sqlite3.Consts
   --Extensions: ExistentialQuantification, AllowOverlappingInstances,
   --    AllowUndecidableInstances, CPP
-  Extensions: ExistentialQuantification
+  Extensions: ExistentialQuantification,
+              ForeignFunctionInterface
