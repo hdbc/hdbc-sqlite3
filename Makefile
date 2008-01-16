@@ -42,7 +42,7 @@ test-ghc6: testsrc/runtests
 	testsrc/runtests
 
 test-hugs: hugsbuild
-	runhugs -98 +o -P$(CURDIR)/dist/build:$(CURDIR)/testsrc: testsrc/runtests.hs
+	runhugs -98 +o -P$(CURDIR)/dist/scratch:$(CURDIR)/testsrc: testsrc/runtests.hs
 
 interact-hugs:
 	hugs -98 +o -P$(CURDIR)/dist/build:
