@@ -1,3 +1,9 @@
+hdbc-sqlite3 (1.1.4.0.1) unstable; urgency=low
+
+  * Rebuild with newer HDBC.
+
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 26 Jun 2008 09:20:21 -0500
+
 hdbc-sqlite3 (1.1.4.0.0) unstable; urgency=low
 
   * Updated for GHC 6.8
