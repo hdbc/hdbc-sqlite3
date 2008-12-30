@@ -1,3 +1,10 @@
+hdbc-sqlite3 (1.1.6.0.0) unstable; urgency=low
+
+  * GHC 6.10 compatibility patch from Brian Bloniarz.
+  * Use dh_haskell_depends.
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 30 Dec 2008 09:12:22 -0600
+
 hdbc-sqlite3 (1.1.4.0.1) unstable; urgency=low
 
   * Rebuild with newer HDBC.
