@@ -1,3 +1,10 @@
+hdbc-sqlite3 (2.0.0.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * This source code is compatible with both GHC 6.8.x and GHC 6.10.x.
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 27 Jan 2009 17:53:36 -0600
+
 hdbc-sqlite3 (1.1.6.0.1) unstable; urgency=high
 
   * Rebuild with newer GHC.
