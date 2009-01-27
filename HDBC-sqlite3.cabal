@@ -40,7 +40,8 @@ Library
   Extensions: ExistentialQuantification,
               ForeignFunctionInterface,
               EmptyDataDecls,
-              ScopedTypeVariables
+              ScopedTypeVariables,
+              PatternSignatures
 
 Executable runtests
    if flag(buildtests)
@@ -70,4 +71,6 @@ Executable runtests
    Extensions: ExistentialQuantification,
                ForeignFunctionInterface,
                EmptyDataDecls,
-               ScopedTypeVariables
+               ScopedTypeVariables,
+               PatternSignatures
+
