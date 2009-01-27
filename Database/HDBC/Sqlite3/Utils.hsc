@@ -22,6 +22,7 @@ module Database.HDBC.Sqlite3.Utils where
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Ptr
+import Database.HDBC(throwSqlError)
 import Database.HDBC.Types
 import Database.HDBC.Sqlite3.Types
 import Foreign.C.Types
@@ -36,11 +37,7 @@ checkError msg o res =
     withSqlite3 o
      (\p -> do rc <- sqlite3_errmsg p
                str <- peekCString rc
-#if __GLASGOW_HASKELL__ >= 610
-               throw $
-#else
-               throwDyn $
-#endif 
+               throwSqlError $
                           SqlError {seState = "",
                                     seNativeError = fromIntegral res,
                                     seErrorMsg = msg ++ ": " ++ str}

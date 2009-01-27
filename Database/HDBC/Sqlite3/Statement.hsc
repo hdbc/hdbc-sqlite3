@@ -39,12 +39,6 @@ import Database.HDBC.DriverUtils
 
 #include <sqlite3.h>
 
-#if __GLASGOW_HASKEL__ >= 610
-myThrow = throw
-#else
-myThrow = throwDyn
-#endif
-
 {- One annoying thing about Sqlite is that a disconnect operation will actually
 fail if there are any active statements.  This is highly annoying, and makes
 for some somewhat complex algorithms. -}
@@ -120,7 +114,7 @@ ffetchrow :: SState -> IO (Maybe [SqlValue])
 ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
     where dofetchrow Empty = return (Empty, Nothing)
           dofetchrow (Prepared _) = 
-              myThrow $ SqlError {seState = "HDBC Sqlite3 fetchrow",
+              throwSqlError $ SqlError {seState = "HDBC Sqlite3 fetchrow",
                                    seNativeError = (-1),
                                    seErrorMsg = "Attempt to fetch row from Statement that has not been executed.  Query was: " ++ (querys sstate)}
           dofetchrow (Executed sto) = withStmt sto (\p ->
@@ -153,11 +147,11 @@ fstep dbo p =
          #{const SQLITE_ROW} -> return True
          #{const SQLITE_DONE} -> return False
          #{const SQLITE_ERROR} -> checkError "step" dbo #{const SQLITE_ERROR}
-                                   >> (myThrow $ SqlError 
+                                   >> (throwSqlError $ SqlError 
                                           {seState = "",
                                            seNativeError = 0,
                                            seErrorMsg = "In HDBC step, internal processing error (got SQLITE_ERROR with no error)"})
-         x -> myThrow $ SqlError {seState = "",
+         x -> throwSqlError $ SqlError {seState = "",
                                    seNativeError = fromIntegral x,
                                    seErrorMsg = "In HDBC step, unexpected result from sqlite3_step"}
 
@@ -170,7 +164,7 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
           doexecute (Prepared sto) = withStmt sto (\p -> 
               do c <- sqlite3_bind_parameter_count p
                  when (c /= genericLength args)
-                   (myThrow $ SqlError {seState = "",
+                   (throwSqlError $ SqlError {seState = "",
                                          seNativeError = (-1),
                                          seErrorMsg = "In HDBC execute, received " ++ (show args) ++ " but expected " ++ (show c) ++ " args."})
                  sqlite3_reset p >>= checkError "execute (reset)" (dbo sstate)
