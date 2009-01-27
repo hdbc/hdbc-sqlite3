@@ -36,7 +36,12 @@ checkError msg o res =
     withSqlite3 o
      (\p -> do rc <- sqlite3_errmsg p
                str <- peekCString rc
-               throwDyn $ SqlError {seState = "",
+#if __GLASGOW_HASKELL__ >= 610
+               throw $
+#else
+               throwDyn $
+#endif 
+                          SqlError {seState = "",
                                     seNativeError = fromIntegral res,
                                     seErrorMsg = msg ++ ": " ++ str}
      )
