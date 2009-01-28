@@ -4,7 +4,7 @@ This package provides a database backend driver for Sqlite version 3.
 
 Please see HDBC itself for documentation on use.  If you don't already
 have it, you can browse this documentation at
-http://darcs.complete.org/hdbc/doc/index.html.
+http://software.complete.org/hdbc
 
 This package provides one function in module Database.HDBC.Sqlite3:
 
@@ -32,7 +32,7 @@ PREREQUISITES
 Before installing this package, you'll need to have HDBC 0.99.0 or
 above installed.  You can download HDBC from http://quux.org/devel/hdbc.
 
-You'll need either GHC 6.4.1 or above, or Hugs 2005xx or above.  
+You'll need either GHC 6.8.x or above, or Hugs 2006xx or above.  
 
 INSTALLATION
 ------------
@@ -60,7 +60,8 @@ To use with GHC, you'll want to use:
 
 Or, with Cabal, use:
 
-  Build-Depends: HDBC>=0.99.0, HDBC-sqlite3
+  Build-Depends: HDBC>=2.0.0, HDBC-sqlite3
 
 -- John Goerzen
+   January 2009
    December 2005
