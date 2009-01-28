@@ -2,10 +2,7 @@ This is hdbc-sqlite3, written and maintained by
 John Goerzen <jgoerzen@complete.org>
 
 The original source can always be found at:
-	ftp://ftp.debian.org/dists/unstable/main/source/
-
-The Darcs repository for this program can be accessed with:
-   darcs get --partial http://darcs.complete.org/hdbc-sqlite3
+   http://software.complete.org/hdbc-sqlite3
 
 Copyright (C) 2005-2009 John Goerzen <jgoerzen@complete.org>
 
