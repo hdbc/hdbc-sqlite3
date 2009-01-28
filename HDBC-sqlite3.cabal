@@ -37,6 +37,7 @@ Library
    Database.HDBC.Sqlite3.Types,
    Database.HDBC.Sqlite3.Utils,
    Database.HDBC.Sqlite3.Consts
+  GHC-Options: -O2
   Extensions: ExistentialQuantification,
               ForeignFunctionInterface,
               EmptyDataDecls,
@@ -73,4 +74,3 @@ Executable runtests
                EmptyDataDecls,
                ScopedTypeVariables,
                PatternSignatures
-
