@@ -18,18 +18,18 @@ Description: Sqlite v3 HDBC (Haskell Database Connectivity) Driver for GHC
  .
  This package provides the Sqlite v3 database driver for HDBC under GHC.
 
-Package: libhugs-hdbc-sqlite3
-Section: libs
-Architecture: any
-Depends: libhugs-hdbc (>= 1.1.6), ${haskell:Depends}, ${shlibs:Depends}, ${misc:Depends}
-Description: Sqlite v3 HDBC (Haskell Database Connectivity) Driver for Hugs
- HDBC provides an abstraction layer between Haskell programs and SQL
- relational databases. This lets you write database code once, in
- Haskell, and have it work with any number of backend SQL databases
- (MySQL, Oracle, PostgreSQL, ODBC-compliant databases, etc.)
- .
- This package provides the Sqlite v3 database driver for HDBC under Hugs.
-
+#Package: libhugs-hdbc-sqlite3
+#Section: libs
+#Architecture: any
+#Depends: libhugs-hdbc (>= 1.1.6), ${haskell:Depends}, ${shlibs:Depends}, ${misc:Depends}
+#Description: Sqlite v3 HDBC (Haskell Database Connectivity) Driver for Hugs
+# HDBC provides an abstraction layer between Haskell programs and SQL
+# relational databases. This lets you write database code once, in
+# Haskell, and have it work with any number of backend SQL databases
+# (MySQL, Oracle, PostgreSQL, ODBC-compliant databases, etc.)
+# .
+# This package provides the Sqlite v3 database driver for HDBC under Hugs.
+#
 Package: haskell-hdbc-sqlite3-doc
 Section: libs
 Architecture: any
