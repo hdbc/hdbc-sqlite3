@@ -20,7 +20,7 @@ test: test-ghc test-hugs
 
 test-hugs:
 	@echo " ****** Running hugs tests"
-	runghc Setup.lhs configure -f buildtests --hugs
+	runghc Setup.lhs configure -f buildtests --hugs --extra-include-dirs=/usr/lib/hugs/include
 	runghc Setup.lhs build
 	runhugs -98 +o -P$(PWD)/dist/scratch:$(PWD)/dist/scratch/programs/runtests: \
 		dist/scratch/programs/runtests/Main.hs
