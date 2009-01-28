@@ -4,9 +4,9 @@ all: setup
 	./setup build
 
 setup: Setup.hs
-	ghc --make -package cabal -o setup Setup.hs
+	ghc --make -package Cabal -o setup Setup.hs
 
-install:
+install: setup
 	./setup install
 
 clean:
@@ -21,14 +21,14 @@ test: test-ghc test-hugs
 	@echo ""
 	@echo "All tests pass."
 
-test-hugs:
+test-hugs: setup
 	@echo " ****** Running hugs tests"
 	./setup configure -f buildtests --hugs --extra-include-dirs=/usr/lib/hugs/include
 	./setup build
 	runhugs -98 +o -P$(PWD)/dist/scratch:$(PWD)/dist/scratch/programs/runtests: \
 		dist/scratch/programs/runtests/Main.hs
 
-test-ghc:
+test-ghc: setup
 	@echo " ****** Building GHC tests"
 	./setup configure -f buildtests
 	./setup build
