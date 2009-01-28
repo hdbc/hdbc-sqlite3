@@ -8,6 +8,10 @@ install:
 
 clean:
 	runghc Setup.lhs clean
+	-rm -rf html `find . -name "*.o"` `find . -name "*.hi" | grep -v debian` \
+		`find . -name "*~" | grep -v debian` *.a setup dist testsrc/runtests \
+		local-pkg doctmp
+	-rm -rf testtmp/* testtmp*
 
 .PHONY: test
 test: test-ghc test-hugs
