@@ -22,7 +22,7 @@ Flag buildtests
 
 Library
   if flag(splitBase)
-    Build-Depends: base>=3 && <4, bytestring
+    Build-Depends: base>=3, bytestring
   else
     Build-Depends: base<3
   Build-Depends: mtl, HDBC>=2.0.0
