@@ -2,8 +2,8 @@ Source: hdbc-sqlite3
 Priority: optional
 Maintainer: John Goerzen <jgoerzen@complete.org>
 Build-Depends: debhelper (>= 4.0.0), ghc6 (>= 6.8.2dfsg1), haskell-devscripts (>= 0.6.15), cpphs, haddock, hugs (>= 98.200503.08), libsqlite3-dev (>= 3.3), libghc6-hdbc-dev (>= 1.1.6.2), libhugs-hdbc (>= 1.1.6.2), libghc6-mtl-dev, libghc6-hunit-dev, libhugs-hunit
-Build-Depends-Indep: haddock, ghc6-doc, haskell-hdbc-doc, ghc6 (>= 6.8.2dfsg1)
-Standards-Version: 3.6.2
+Build-Depends-Indep: ghc6-doc, haskell-hdbc-doc
+Standards-Version: 3.8.0
 Section: libs
 
 Package: libghc6-hdbc-sqlite3-dev
@@ -31,8 +31,8 @@ Description: Sqlite v3 HDBC (Haskell Database Connectivity) Driver for GHC
 # This package provides the Sqlite v3 database driver for HDBC under Hugs.
 #
 Package: haskell-hdbc-sqlite3-doc
-Section: libs
-Architecture: any
+Section: doc
+Architecture: all
 Depends: ${haskell:Depends}, ${shlibs:Depends}, ${misc:Depends}
 Description: Sqlite v3 HDBC (Haskell Database Connectivity) Documentation
  HDBC provides an abstraction layer between Haskell programs and SQL
