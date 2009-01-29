@@ -1,7 +1,7 @@
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- above line for hugs
 {-
-Copyright (C) 2005-2007 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005-2009 John Goerzen <jgoerzen@complete.org>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -36,6 +36,8 @@ import Database.HDBC.Sqlite3.Utils
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Concurrent.MVar
+import qualified Data.ByteString as B
+import qualified Data.ByteString.UTF8 as BUTF8
 
 {- | Connect to an Sqlite version 3 database.  The only parameter needed is
 the filename of the database to connect to.
@@ -43,7 +45,7 @@ the filename of the database to connect to.
 All database accessor functions are provided in the main HDBC module. -}
 connectSqlite3 :: FilePath -> IO Impl.Connection
 connectSqlite3 fp = 
-    withCString fp 
+    B.useAsCString (BUTF8.fromString fp)
         (\cs -> alloca 
          (\(p::Ptr (Ptr CSqlite3)) ->
               do res <- sqlite3_open cs p
