@@ -25,6 +25,8 @@ import Foreign.Ptr
 import Database.HDBC(throwSqlError)
 import Database.HDBC.Types
 import Database.HDBC.Sqlite3.Types
+import qualified Data.ByteString as B
+import qualified Data.ByteString.UTF8 as BUTF8
 import Foreign.C.Types
 import Control.Exception
 import Foreign.Storable
@@ -36,7 +38,8 @@ checkError _ _ 0 = return ()
 checkError msg o res =
     withSqlite3 o
      (\p -> do rc <- sqlite3_errmsg p
-               str <- peekCString rc
+               bs <- B.packCString rc
+               let str = BUTF8.toString bs
                throwSqlError $
                           SqlError {seState = "",
                                     seNativeError = fromIntegral res,
