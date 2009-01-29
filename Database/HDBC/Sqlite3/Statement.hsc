@@ -199,7 +199,7 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                            (dbo sstate)
           bindArgs p i (SqlByteString bs) =
               B.useAsCStringLen bs (bindCStringArgs p i)
-          bindArgs p i arg = withCStringLen (fromSql arg) (bindCStringArgs p i)
+          bindArgs p i arg = bindArgs p i (SqlByteString (fromSql arg))
 
           bindCStringArgs p i (cs, len) =
               do r <- sqlite3_bind_text2 p i cs (fromIntegral len)
