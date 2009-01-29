@@ -25,7 +25,7 @@ Library
     Build-Depends: base>=3, bytestring
   else
     Build-Depends: base<3
-  Build-Depends: mtl, HDBC>=2.0.0
+  Build-Depends: mtl, HDBC>=2.0.0, utf8-string
 
   C-Sources: hdbc-sqlite3-helper.c
   include-dirs: .

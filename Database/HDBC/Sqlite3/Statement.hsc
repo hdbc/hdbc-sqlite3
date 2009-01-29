@@ -2,7 +2,7 @@
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- Above line for Hugs
 {- 
-Copyright (C) 2005 John Goerzen <jgoerzen@complete.org>
+Copyright (C) 2005-2009 John Goerzen <jgoerzen@complete.org>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,7 @@ import Foreign.Marshal
 import Foreign.Storable
 import Control.Monad
 import qualified Data.ByteString as B
+import qualified Data.ByteString.UTF8 as BUTF8
 import Data.List
 import Control.Exception
 import Database.HDBC.DriverUtils
@@ -90,7 +91,7 @@ unless state is Empty)
 -}
 fprepare :: SState -> IO Stmt
 fprepare sstate = withRawSqlite3 (dbo sstate)
-  (\p -> withCStringLen ((querys sstate) ++ "\0")
+  (\p -> B.useAsCStringLen (BUTF8.fromString ((querys sstate) ++ "\0"))
    (\(cs, cslen) -> alloca
     (\(newp::Ptr (Ptr CStmt)) -> 
      (do res <- sqlite3_prepare p cs (fromIntegral cslen) newp nullPtr
@@ -137,8 +138,8 @@ ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
                    then return SqlNull
                    else do text <- sqlite3_column_text p icol
                            len <- sqlite3_column_bytes p icol
-                           s <- peekCStringLen (text, fromIntegral len)
-                           return (SqlString s)
+                           s <- B.packCStringLen (text, fromIntegral len)
+                           return (SqlByteString s)
 
 fstep :: Sqlite3 -> Ptr CStmt -> IO Bool
 fstep dbo p =
