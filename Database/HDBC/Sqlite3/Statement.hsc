@@ -211,7 +211,8 @@ fgetcolnames csth =
            mapM (getCol csth) [0..(count -1)]
     where getCol csth i =
               do cstr <- sqlite3_column_name csth i
-                 peekCString cstr
+                 bs <- B.packCString cstr
+                 return (BUTF8.toString bs)
 
 fexecutemany _ [] = return ()
 fexecutemany sstate (args:[]) = 
