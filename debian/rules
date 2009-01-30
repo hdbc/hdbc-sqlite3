@@ -70,7 +70,7 @@ install: build
 	dh_haskell -i
 	dh_haskell_depends -a
 	$(MAKE) clean
-	$(MAKE) test
+	$(MAKE) test-ghc
 
 # Build architecture-independent files here.
 binary-indep: build install
