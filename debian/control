@@ -39,6 +39,4 @@ Description: Sqlite v3 HDBC (Haskell Database Connectivity) Documentation
  relational databases. This lets you write database code once, in
  Haskell, and have it work with any number of backend SQL databases
  (MySQL, Oracle, PostgreSQL, ODBC-compliant databases, etc.)
- .
- This package provides the Sqlite v3 database driver for HDBC under Hugs.
 
