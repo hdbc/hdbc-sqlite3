@@ -23,7 +23,7 @@ test: test-ghc test-hugs
 
 test-hugs: setup
 	@echo " ****** Running hugs tests"
-	./setup configure -f buildtests --hugs --extra-include-dirs=/usr/lib/hugs/include
+	./setup configure -f buildtests --hugs # for GHC 6.10: --extra-include-dirs=/usr/lib/hugs/include
 	./setup build
 	runhugs -98 +o -P$(PWD)/dist/scratch:$(PWD)/dist/scratch/programs/runtests: \
 		dist/scratch/programs/runtests/Main.hs
