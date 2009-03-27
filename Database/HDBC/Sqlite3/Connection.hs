@@ -91,7 +91,7 @@ mkConn fp obj =
                             Impl.dbTransactionSupport = True,
                             Impl.dbServerVer = ver,
                             Impl.getTables = fgettables obj children,
-                            Impl.describeTable = \_ -> fail $ "Sqlite3 backend does not support describeTable",
+                            Impl.describeTable = fdescribeTable obj children,
                             Impl.setBusyTimeout = fsetbusy obj}
 
 fgettables o mchildren =
@@ -100,6 +100,33 @@ fgettables o mchildren =
        res1 <- fetchAllRows' sth
        let res = map fromSql $ concat res1
        return $ seq (length res) res
+       
+fdescribeTable o mchildren name =  do 
+    sth <- newSth o mchildren True $ "PRAGMA table_info(" ++ name ++ ")"
+    execute sth []
+    res1 <- fetchAllRows' sth
+    return $ map describeCol res1
+  where
+     describeCol (_:name:typ:notnull:df:pk:_) =
+        (fromSql name, describeType typ notnull df pk)
+        
+     describeType name notnull df pk =
+         SqlColDesc (typeId name) Nothing Nothing Nothing (nullable notnull)
+         
+     nullable SqlNull = Nothing
+     nullable (SqlString "0") = Just True
+     nullable (SqlString "1") = Just False
+     nullable _ = Nothing
+     
+     typeId SqlNull                     = SqlUnknownT "Any"
+     typeId (SqlString ('i':'n':'t':_)) = SqlIntegerT
+     typeId (SqlString "text")          = SqlVarCharT
+     typeId (SqlString "real")          = SqlRealT
+     typeId (SqlString "blob")          = SqlVarBinaryT
+     typeId (SqlString "")              = SqlUnknownT "Any"
+     typeId (SqlString other)           = SqlUnknownT other
+     typeId _                           = SqlUnknownT "Unknown"
+
 
 fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
     sqlite3_busy_timeout ppdb ms
