@@ -55,7 +55,9 @@ if your application or filesystemare not running in Unicode space. -}
 connectSqlite3Raw :: FilePath -> IO Impl.Connection
 connectSqlite3Raw = genericConnect withCString
 
-genericConnect :: (String -> (CString -> IO Impl.Connection) -> IO Impl.Connection) -> FilePath -> IO Impl.Connection
+genericConnect :: (String -> (CString -> IO Impl.Connection) -> IO Impl.Connection) 
+               -> FilePath
+               -> IO Impl.Connection
 genericConnect strAsCStrFunc fp =
     strAsCStrFunc fp
         (\cs -> alloca 
