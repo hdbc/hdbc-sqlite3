@@ -19,7 +19,7 @@ Copyright (C) 2005-2009 John Goerzen <jgoerzen@complete.org>
 -}
 
 module Database.HDBC.Sqlite3.Connection 
-	(connectSqlite3, Impl.Connection())
+	(connectSqlite3, connectSqlite3Raw, Impl.Connection())
  where
 
 import Database.HDBC.Types
@@ -44,8 +44,20 @@ the filename of the database to connect to.
 
 All database accessor functions are provided in the main HDBC module. -}
 connectSqlite3 :: FilePath -> IO Impl.Connection
-connectSqlite3 fp = 
-    B.useAsCString (BUTF8.fromString fp)
+connectSqlite3 = 
+    genericConnect (B.useAsCString . BUTF8.fromString)
+
+{- | Connects to a Sqlite v3 database as with 'connectSqlite3', but
+instead of converting the supplied 'FilePath' to a C String by performing
+a conversion to Unicode, instead converts it by simply dropping all bits past
+the eighth.  This may be useful in rare situations
+if your application or filesystemare not running in Unicode space. -}
+connectSqlite3Raw :: FilePath -> IO Impl.Connection
+connectSqlite3Raw = genericConnect withCString
+
+genericConnect :: (String -> (CString -> IO Impl.Connection) -> IO Impl.Connection) -> FilePath -> IO Impl.Connection
+genericConnect strAsCStrFunc fp =
+    strAsCStrFunc fp
         (\cs -> alloca 
          (\(p::Ptr (Ptr CSqlite3)) ->
               do res <- sqlite3_open cs p

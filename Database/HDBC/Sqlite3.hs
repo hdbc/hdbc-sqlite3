@@ -33,13 +33,13 @@ Written by John Goerzen, jgoerzen\@complete.org
 module Database.HDBC.Sqlite3
     (
     -- * Sqlite3 Basics
-     connectSqlite3, Connection(), setBusyTimeout,
+     connectSqlite3, connectSqlite3Raw, Connection(), setBusyTimeout,
     -- * Sqlite3 Error Consts
     module Database.HDBC.Sqlite3.Consts
     )
 
 where
 
-import Database.HDBC.Sqlite3.Connection(connectSqlite3, Connection())
+import Database.HDBC.Sqlite3.Connection(connectSqlite3, connectSqlite3Raw, Connection())
 import Database.HDBC.Sqlite3.ConnectionImpl(setBusyTimeout)
 import Database.HDBC.Sqlite3.Consts
