@@ -1,3 +1,9 @@
+hdbc-sqlite3 (2.1.0.2-1) unstable; urgency=low
+
+  * Cabal fixes.
+
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 02 Jul 2009 15:33:28 -0500
+
 hdbc-sqlite3 (2.1.0.1-1) unstable; urgency=low
 
   * New raw connect function.
