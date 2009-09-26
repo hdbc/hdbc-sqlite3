@@ -73,6 +73,7 @@ newSth indbo mchildren autoFinish str =
        modifyMVar_ (stomv sstate) (\_ -> (fprepare sstate >>= return . Prepared))
        let retval = 
                Statement {execute = fexecute sstate,
+                           executeRaw = fexecuteRaw indbo str,
                            executeMany = fexecutemany sstate,
                            finish = public_ffinish sstate,
                            fetchRow = ffetchrow sstate,
@@ -206,6 +207,23 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  checkError ("execute (binding column " ++ 
                              (show i) ++ ")") (dbo sstate) r
 
+fexecuteRaw :: Sqlite3 -> String -> IO ()
+fexecuteRaw dbo query =
+    withSqlite3 dbo
+      (\p -> B.useAsCStringLen (BUTF8.fromString (query ++ "\0"))
+       (\(cs, cslen) -> do
+          result <- sqlite3_exec p cs nullFunPtr nullPtr nullPtr
+          case result of
+            #{const SQLITE_OK} -> return ()
+            s -> do
+              checkError "exec" dbo #{const SQLITE_ERROR}
+              throwSqlError $ SqlError
+                 {seState = "",
+                  seNativeError = fromIntegral s,
+                  seErrorMsg = "In sqlite3_exec, internal error"}
+       )
+      )
+
 fgetcolnames csth =
         do count <- sqlite3_column_count csth
            mapM (getCol csth) [0..(count -1)]
@@ -247,6 +265,14 @@ foreign import ccall unsafe "sqlite3.h sqlite3_bind_parameter_count"
 
 foreign import ccall unsafe "sqlite3.h sqlite3_step"
   sqlite3_step :: (Ptr CStmt) -> IO CInt
+
+foreign import ccall unsafe "sqlite3.h sqlite3_exec"
+  sqlite3_exec :: (Ptr CSqlite3)
+               -> CString
+               -> FunPtr (Ptr () -> CInt -> Ptr CString -> Ptr CString)
+               -> Ptr ()
+               -> Ptr CString
+               -> IO CInt
 
 foreign import ccall unsafe "sqlite3.h sqlite3_reset"
   sqlite3_reset :: (Ptr CStmt) -> IO CInt

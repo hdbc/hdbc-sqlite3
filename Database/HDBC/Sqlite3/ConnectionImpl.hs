@@ -28,6 +28,7 @@ data Connection =
                 commit :: IO (),
                 rollback :: IO (),
                 run :: String -> [Types.SqlValue] -> IO Integer,
+                runRaw :: String -> IO (),
                 prepare :: String -> IO Types.Statement,
                 clone :: IO Connection,
                 hdbcDriverName :: String,
@@ -48,6 +49,7 @@ instance Types.IConnection Connection where
   commit = commit
   rollback = rollback
   run = run
+  runRaw = runRaw
   prepare = prepare
   clone = clone
   hdbcDriverName = hdbcDriverName

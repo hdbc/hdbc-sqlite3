@@ -81,6 +81,7 @@ mkConn fp obj =
                             Impl.commit = fcommit obj children,
                             Impl.rollback = frollback obj children,
                             Impl.run = frun obj children,
+                            Impl.runRaw = frunRaw obj children,
                             Impl.prepare = newSth obj children True,
                             Impl.clone = connectSqlite3 fp,
                             Impl.hdbcDriverName = "sqlite3",
@@ -115,6 +116,12 @@ frun o mchildren query args =
        res <- execute sth args
        finish sth
        return res
+
+frunRaw :: Sqlite3 -> ChildList -> String -> IO ()
+frunRaw o mchildren query =
+    do sth <- newSth o mchildren False query
+       executeRaw sth
+       finish sth
 
 fcommit o children = do frun o children "COMMIT" []
                         begin_transaction o children
