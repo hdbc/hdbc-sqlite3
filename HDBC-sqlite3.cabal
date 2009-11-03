@@ -1,5 +1,5 @@
 Name: HDBC-sqlite3
-Version: 2.1.0.2
+Version: 2.2.0.0
 License: LGPL
 Maintainer: John Goerzen <jgoerzen@complete.org>
 Author: John Goerzen
@@ -21,14 +21,10 @@ Flag buildtests
   default: False
 
 Library
-  if flag(splitBase)
-    Build-Depends: base>=3 && < 5, bytestring
-  else
-    Build-Depends: base<3 && < 5
+  Build-Depends: base>=3 && < 5, bytestring, mtl, HDBC>=2.2.0, utf8-string
 
   if impl(ghc >= 6.9)
     Build-Depends: base >= 4 && < 5
-  Build-Depends: mtl, HDBC>=2.1.0, utf8-string
 
   C-Sources: hdbc-sqlite3-helper.c
   include-dirs: .
