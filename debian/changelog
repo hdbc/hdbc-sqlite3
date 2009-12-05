@@ -1,3 +1,9 @@
+hdbc-sqlite3 (2.2.0.0-2) unstable; urgency=low
+
+  * Switch to hlibrary.mk (Closes: 555154) 
+
+ -- Joachim Breitner <nomeata@debian.org>  Sat, 05 Dec 2009 18:43:13 +0100
+
 hdbc-sqlite3 (2.2.0.0-1) unstable; urgency=low
 
   * New upstream release.
