@@ -7,6 +7,7 @@ Copyright: Copyright (c) 2005-2010 John Goerzen
 license-file: COPYRIGHT
 extra-source-files: COPYING, hdbc-sqlite3-helper.h, Makefile
 homepage: http://software.complete.org/hdbc-sqlite3
+Category: Database
 synopsis: Sqlite v3 driver for HDBC
 Description: This is the Sqlite v3 driver for HDBC, the generic
  database access system for Haskell
@@ -38,7 +39,7 @@ Library
               ForeignFunctionInterface,
               EmptyDataDecls,
               ScopedTypeVariables,
-              PatternSignatures
+              ScopedTypeVariables
 
 Executable runtests
    if flag(buildtests)
@@ -70,4 +71,4 @@ Executable runtests
                ForeignFunctionInterface,
                EmptyDataDecls,
                ScopedTypeVariables,
-               PatternSignatures
+               ScopedTypeVariables
