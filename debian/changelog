@@ -1,3 +1,10 @@
+hdbc-sqlite3 (2.3.0.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Rebuild with GHC 6.12.
+
+ -- John Goerzen <jgoerzen@complete.org>  Wed, 17 Feb 2010 16:40:51 -0600
+
 hdbc-sqlite3 (2.2.0.0-2) unstable; urgency=low
 
   * Switch to hlibrary.mk (Closes: 555154) 
