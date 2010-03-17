@@ -44,7 +44,10 @@ Description: Sqlite v3 HDBC (Haskell Database Connectivity) Driver for GHC
 # .
 # This package provides the Sqlite v3 database driver for HDBC under Hugs.
 #
-Package: haskell-hdbc-sqlite3-doc
+Package: libghc6-hdbc-sqlite3-doc
+Replaces: haskell-hdbc-sqlite3-doc
+Conflicts: haskell-hdbc-sqlite3-doc
+Provides: haskell-hdbc-sqlite3-doc
 Section: doc
 Architecture: all
 Depends: ${haskell:Depends}, ${misc:Depends}
