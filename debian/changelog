@@ -1,3 +1,11 @@
+hdbc-sqlite3 (2.3.0.0-3) UNRELEASED; urgency=low
+
+  * Fix "please update build-depends to match renamed binary package
+    libghc6-hdbc-doc" updating -doc packages in Build-Depends to new
+    package names.  (Closes: #576098)
+
+ -- Marco Túlio Gontijo e Silva <marcot@debian.org>  Wed, 31 Mar 2010 21:57:09 -0300
+
 hdbc-sqlite3 (2.3.0.0-2) unstable; urgency=low
 
   * debian/control: Rename -doc package.
