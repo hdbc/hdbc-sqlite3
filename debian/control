@@ -9,12 +9,13 @@ Build-Depends:
  haskell-devscripts (>= 0.7.3),
  cdbs,
  cpphs,
- ghc6-doc,
  haddock,
  hscolour,
  libsqlite3-dev (>= 3.3),
  libghc6-hdbc-dev (>= 2.2.0),
  libghc6-mtl-dev,
+Build-Depends-Indep:
+ ghc6-doc,
  libghc6-hdbc-doc
 Standards-Version: 3.8.3
 Vcs-Git: git://git.debian.org/git/pkg-haskell/hdbc-sqlite3.git
