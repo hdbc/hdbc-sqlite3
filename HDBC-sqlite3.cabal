@@ -44,7 +44,7 @@ Library
 Executable runtests
    if flag(buildtests)
       Buildable: True
-      Build-Depends: HUnit, QuickCheck, testpack, containers, convertible, 
+      Build-Depends: HUnit, testpack, containers, convertible, 
                   old-time, time, old-locale
    else
       Buildable: False
