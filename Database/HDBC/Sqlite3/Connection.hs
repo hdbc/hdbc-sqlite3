@@ -38,6 +38,7 @@ import Foreign.Ptr
 import Control.Concurrent.MVar
 import qualified Data.ByteString as B
 import qualified Data.ByteString.UTF8 as BUTF8
+import qualified Data.Char
 
 {- | Connect to an Sqlite version 3 database.  The only parameter needed is
 the filename of the database to connect to.
@@ -119,13 +120,17 @@ fdescribeTable o mchildren name =  do
      nullable _ = Nothing
      
      typeId SqlNull                     = SqlUnknownT "Any"
-     typeId (SqlString ('i':'n':'t':_)) = SqlIntegerT
-     typeId (SqlString "text")          = SqlVarCharT
-     typeId (SqlString "real")          = SqlRealT
-     typeId (SqlString "blob")          = SqlVarBinaryT
-     typeId (SqlString "")              = SqlUnknownT "Any"
-     typeId (SqlString other)           = SqlUnknownT other
+     typeId (SqlString t)               = typeId' t
+     typeId (SqlByteString t)           = typeId' $ BUTF8.toString t
      typeId _                           = SqlUnknownT "Unknown"
+     
+     typeId' t = case map Data.Char.toLower t of
+       ('i':'n':'t':_) -> SqlIntegerT
+       "text"          -> SqlVarCharT
+       "real"          -> SqlRealT
+       "blob"          -> SqlVarBinaryT
+       ""              -> SqlUnknownT "Any"
+       other           -> SqlUnknownT other
 
 
 fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
