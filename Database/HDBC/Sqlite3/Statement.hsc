@@ -153,9 +153,11 @@ fstep dbo p =
                                           {seState = "",
                                            seNativeError = 0,
                                            seErrorMsg = "In HDBC step, internal processing error (got SQLITE_ERROR with no error)"})
-         x -> throwSqlError $ SqlError {seState = "",
-                                   seNativeError = fromIntegral x,
-                                   seErrorMsg = "In HDBC step, unexpected result from sqlite3_step"}
+         x -> checkError "step" dbo x
+              >> (throwSqlError $ SqlError 
+                                {seState = "",
+                                 seNativeError = fromIntegral x,
+                                 seErrorMsg = "In HDBC step, internal processing error (got error code with no error)"})
 
 fexecute sstate args = modifyMVar (stomv sstate) doexecute
     where doexecute (Executed sto) = doexecute (Prepared sto)
@@ -216,7 +218,7 @@ fexecuteRaw dbo query =
           case result of
             #{const SQLITE_OK} -> return ()
             s -> do
-              checkError "exec" dbo #{const SQLITE_ERROR}
+              checkError "exec" dbo s
               throwSqlError $ SqlError
                  {seState = "",
                   seNativeError = fromIntegral s,

@@ -91,8 +91,14 @@ int sqlite3_prepare2(finalizeonce *fdb, const char *zSql,
 #ifdef DEBUG_HDBC_SQLITE3
   fprintf(stderr, "\nCalling prepare on %p", db);
 #endif
+#if SQLITE_VERSION_NUMBER > 3003011
+  res = sqlite3_prepare_v2(db, zSql, nBytes, &ppst,
+                        pzTail);
+#else
   res = sqlite3_prepare(db, zSql, nBytes, &ppst,
                         pzTail);
+#endif
+
   /* We don't try to deallocate this in Haskell if there
      was an error. */
   if (res != SQLITE_OK) {
