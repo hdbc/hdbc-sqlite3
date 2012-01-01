@@ -6,7 +6,7 @@ Author: John Goerzen
 Copyright: Copyright (c) 2005-2011 John Goerzen
 license-file: LICENSE
 extra-source-files: LICENSE, hdbc-sqlite3-helper.h, Makefile
-homepage: http://software.complete.org/hdbc-sqlite3
+homepage: https://github.com/hdbc/hdbc-sqlite3
 Category: Database
 synopsis: Sqlite v3 driver for HDBC
 Description: This is the Sqlite v3 driver for HDBC, the generic
