@@ -100,6 +100,9 @@ fdescribeTable o mchildren name =  do
      nullable SqlNull = Nothing
      nullable (SqlString "0") = Just True
      nullable (SqlString "1") = Just False
+     nullable (SqlByteString x)
+       | BUTF8.toString x == "0" = Just True
+       | BUTF8.toString x == "1" = Just False
      nullable _ = Nothing
      
      typeId SqlNull                     = SqlUnknownT "Any"
