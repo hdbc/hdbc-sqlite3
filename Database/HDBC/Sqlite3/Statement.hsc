@@ -122,7 +122,12 @@ ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
                    else do text <- sqlite3_column_text p icol
                            len <- sqlite3_column_bytes p icol
                            s <- B.packCStringLen (text, fromIntegral len)
-                           return (SqlByteString s)
+                           case t of
+                             #{const SQLITE_INTEGER} -> return $ SqlInt64 (read $ BUTF8.toString s)
+                             #{const SQLITE_FLOAT}   -> return $ SqlDouble (read $ BUTF8.toString s)
+                             #{const SQLITE_BLOB}    -> return $ SqlByteString s
+                             #{const SQLITE_TEXT}    -> return $ SqlByteString s
+                             _                       -> return $ SqlByteString s
 
 fstep :: Sqlite3 -> Ptr CStmt -> IO Bool
 fstep dbo p =
