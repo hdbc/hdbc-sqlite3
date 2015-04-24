@@ -2,9 +2,9 @@
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- above line for hugs
 
-module Database.HDBC.Sqlite3.Connection 
-	(connectSqlite3, connectSqlite3Raw, Impl.Connection())
- where
+module Database.HDBC.Sqlite3.Connection
+  (connectSqlite3, connectSqlite3Raw, Impl.Connection())
+  where
 
 import Database.HDBC.Types
 import Database.HDBC
@@ -29,7 +29,7 @@ the filename of the database to connect to.
 
 All database accessor functions are provided in the main HDBC module. -}
 connectSqlite3 :: FilePath -> IO Impl.Connection
-connectSqlite3 = 
+connectSqlite3 =
     genericConnect (B.useAsCString . BUTF8.fromString)
 
 {- | Connects to a Sqlite v3 database as with 'connectSqlite3', but
@@ -40,12 +40,12 @@ if your application or filesystemare not running in Unicode space. -}
 connectSqlite3Raw :: FilePath -> IO Impl.Connection
 connectSqlite3Raw = genericConnect withCString
 
-genericConnect :: (String -> (CString -> IO Impl.Connection) -> IO Impl.Connection) 
+genericConnect :: (String -> (CString -> IO Impl.Connection) -> IO Impl.Connection)
                -> FilePath
                -> IO Impl.Connection
 genericConnect strAsCStrFunc fp =
     strAsCStrFunc fp
-        (\cs -> alloca 
+        (\cs -> alloca
          (\(p::Ptr (Ptr CSqlite3)) ->
               do res <- sqlite3_open cs p
                  o <- peek p
@@ -85,8 +85,8 @@ fgettables o mchildren =
        res1 <- fetchAllRows' sth
        let res = map fromSql $ concat res1
        return $ seq (length res) res
-       
-fdescribeTable o mchildren name =  do 
+
+fdescribeTable o mchildren name =  do
     sth <- newSth o mchildren True $ "PRAGMA table_info(" ++ name ++ ")"
     execute sth []
     res1 <- fetchAllRows' sth
@@ -94,10 +94,10 @@ fdescribeTable o mchildren name =  do
   where
      describeCol (_:name:typ:notnull:df:pk:_) =
         (fromSql name, describeType typ notnull df pk)
-        
+
      describeType name notnull df pk =
          SqlColDesc (typeId name) Nothing Nothing Nothing (nullable notnull)
-         
+
      nullable SqlNull = Nothing
      nullable (SqlString "0") = Just True
      nullable (SqlString "1") = Just False
@@ -105,12 +105,12 @@ fdescribeTable o mchildren name =  do
        | BUTF8.toString x == "0" = Just True
        | BUTF8.toString x == "1" = Just False
      nullable _ = Nothing
-     
+
      typeId SqlNull                     = SqlUnknownT "Any"
      typeId (SqlString t)               = typeId' t
      typeId (SqlByteString t)           = typeId' $ BUTF8.toString t
      typeId _                           = SqlUnknownT "Unknown"
-     
+
      typeId' t = case map Data.Char.toLower t of
        ('i':'n':'t':_) -> SqlIntegerT
        "text"          -> SqlVarCharT
@@ -148,7 +148,7 @@ frollback o children = do frun o children "ROLLBACK" []
                           begin_transaction o children
 
 fdisconnect :: Sqlite3 -> ChildList -> IO ()
-fdisconnect o mchildren = withRawSqlite3 o $ \p -> 
+fdisconnect o mchildren = withRawSqlite3 o $ \p ->
     do closeAllChildren mchildren
        r <- sqlite3_close p
        checkError "disconnect" o r
