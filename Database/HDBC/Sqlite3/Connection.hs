@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- above line for hugs
 
