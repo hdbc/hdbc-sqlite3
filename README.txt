@@ -4,7 +4,7 @@ This package provides a database backend driver for Sqlite version 3.
 
 Please see HDBC itself for documentation on use.  If you don't already
 have it, you can browse this documentation at
-http://software.complete.org/hdbc
+https://hackage.haskell.org/package/HDBC
 
 This package provides one function in module Database.HDBC.Sqlite3:
 
