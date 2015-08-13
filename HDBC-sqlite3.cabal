@@ -68,7 +68,8 @@ Executable runtests
    Extra-Libraries: sqlite3
    Hs-Source-Dirs: ., testsrc
    GHC-Options: -O2
-   Extensions: ExistentialQuantification,
+   Extensions: CPP,
+               ExistentialQuantification,
                ForeignFunctionInterface,
                EmptyDataDecls,
                ScopedTypeVariables
