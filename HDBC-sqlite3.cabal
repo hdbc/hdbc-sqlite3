@@ -57,6 +57,7 @@ Executable runtests
                   TestUtils,
                   Testbasics,
                   Tests,
+                  TestTime,
                   Database.HDBC.Sqlite3.Connection,
                   Database.HDBC.Sqlite3.ConnectionImpl,
                   Database.HDBC.Sqlite3.Statement,
