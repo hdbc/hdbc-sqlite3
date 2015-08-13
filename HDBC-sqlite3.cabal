@@ -39,7 +39,6 @@ Library
   Extensions: ExistentialQuantification,
               ForeignFunctionInterface,
               EmptyDataDecls,
-              ScopedTypeVariables,
               ScopedTypeVariables
 
 Executable runtests
@@ -57,6 +56,7 @@ Executable runtests
                   TestUtils,
                   Testbasics,
                   Tests,
+                  TestTime,
                   Database.HDBC.Sqlite3.Connection,
                   Database.HDBC.Sqlite3.ConnectionImpl,
                   Database.HDBC.Sqlite3.Statement,
@@ -68,8 +68,8 @@ Executable runtests
    Extra-Libraries: sqlite3
    Hs-Source-Dirs: ., testsrc
    GHC-Options: -O2
-   Extensions: ExistentialQuantification,
+   Extensions: CPP,
+               ExistentialQuantification,
                ForeignFunctionInterface,
                EmptyDataDecls,
-               ScopedTypeVariables,
                ScopedTypeVariables
