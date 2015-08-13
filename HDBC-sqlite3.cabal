@@ -39,7 +39,6 @@ Library
   Extensions: ExistentialQuantification,
               ForeignFunctionInterface,
               EmptyDataDecls,
-              ScopedTypeVariables,
               ScopedTypeVariables
 
 Executable runtests
@@ -72,5 +71,4 @@ Executable runtests
    Extensions: ExistentialQuantification,
                ForeignFunctionInterface,
                EmptyDataDecls,
-               ScopedTypeVariables,
                ScopedTypeVariables
