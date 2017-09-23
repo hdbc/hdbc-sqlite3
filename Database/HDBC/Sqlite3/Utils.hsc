@@ -12,7 +12,6 @@ import Database.HDBC.Sqlite3.Types
 import qualified Data.ByteString as B
 import qualified Data.ByteString.UTF8 as BUTF8
 import Foreign.C.Types
-import Control.Exception
 import Foreign.Storable
 
 #include "hdbc-sqlite3-helper.h"

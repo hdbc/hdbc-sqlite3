@@ -35,7 +35,7 @@ Library
    Database.HDBC.Sqlite3.Types,
    Database.HDBC.Sqlite3.Utils,
    Database.HDBC.Sqlite3.Consts
-  GHC-Options: -O2
+  GHC-Options: -O2 -Wall
   Extensions: ExistentialQuantification,
               ForeignFunctionInterface,
               EmptyDataDecls,
@@ -74,7 +74,7 @@ Executable runtests
    include-dirs: .
    Extra-Libraries: sqlite3
    Hs-Source-Dirs: ., testsrc
-   GHC-Options: -O2
+   GHC-Options: -O2 -Wall
    Extensions: ExistentialQuantification,
                ForeignFunctionInterface,
                EmptyDataDecls,

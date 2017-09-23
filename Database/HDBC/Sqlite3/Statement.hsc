@@ -44,14 +44,14 @@ data SState = SState {dbo :: Sqlite3,
                       autoFinish :: Bool}
 
 newSth :: Sqlite3 -> ChildList -> Bool -> String -> IO Statement
-newSth indbo mchildren autoFinish str = 
+newSth indbo mchildren auto str =
     do newstomv <- newMVar Empty
        newcolnamesmv <- newMVar []
        let sstate = SState{dbo = indbo,
                            stomv = newstomv,
                            querys = str,
                            colnamesmv = newcolnamesmv,
-                           autoFinish = autoFinish}
+                           autoFinish = auto}
        modifyMVar_ (stomv sstate) (\_ -> (fprepare sstate >>= return . Prepared))
        let retval = 
                Statement {execute = fexecute sstate,
@@ -130,22 +130,23 @@ ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
 
 
 fstep :: Sqlite3 -> Ptr CStmt -> IO Bool
-fstep dbo p =
+fstep db p =
     do r <- sqlite3_step p
        case r of
          #{const SQLITE_ROW} -> return True
          #{const SQLITE_DONE} -> return False
-         #{const SQLITE_ERROR} -> checkError "step" dbo #{const SQLITE_ERROR}
+         #{const SQLITE_ERROR} -> checkError "step" db #{const SQLITE_ERROR}
                                    >> (throwSqlError $ SqlError 
                                           {seState = "",
                                            seNativeError = 0,
                                            seErrorMsg = "In HDBC step, internal processing error (got SQLITE_ERROR with no error)"})
-         x -> checkError "step" dbo x
+         x -> checkError "step" db x
               >> (throwSqlError $ SqlError 
                                 {seState = "",
                                  seNativeError = fromIntegral x,
                                  seErrorMsg = "In HDBC step, internal processing error (got error code with no error)"})
 
+fexecute :: SState -> [SqlValue] -> IO Integer
 fexecute sstate args = modifyMVar (stomv sstate) doexecute
     where doexecute (Executed sto) = doexecute (Prepared sto)
           doexecute (Exhausted sto) = doexecute (Prepared sto)
@@ -175,7 +176,7 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  changes <- if origtc == newtc
                                then return 0
                                else withSqlite3 (dbo sstate) sqlite3_changes
-                 fgetcolnames p >>= swapMVar (colnamesmv sstate)
+                 _ <- fgetcolnames p >>= swapMVar (colnamesmv sstate)
                  if r
                     then return (Executed sto, fromIntegral changes)
                     else if (autoFinish sstate)
@@ -197,15 +198,15 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                              (show i) ++ ")") (dbo sstate) r
 
 fexecuteRaw :: Sqlite3 -> String -> IO ()
-fexecuteRaw dbo query =
-    withSqlite3 dbo
+fexecuteRaw db query =
+    withSqlite3 db
       (\p -> B.useAsCStringLen (BUTF8.fromString (query ++ "\0"))
-       (\(cs, cslen) -> do
+       (\(cs, _) -> do
           result <- sqlite3_exec p cs nullFunPtr nullPtr nullPtr
           case result of
             #{const SQLITE_OK} -> return ()
             s -> do
-              checkError "exec" dbo s
+              checkError "exec" db s
               throwSqlError $ SqlError
                  {seState = "",
                   seNativeError = fromIntegral s,
@@ -213,32 +214,35 @@ fexecuteRaw dbo query =
        )
       )
 
+fgetcolnames :: Ptr CStmt -> IO [String]
 fgetcolnames csth =
         do count <- sqlite3_column_count csth
            mapM (getCol csth) [0..(count -1)]
-    where getCol csth i =
-              do cstr <- sqlite3_column_name csth i
-                 bs <- B.packCString cstr
-                 return (BUTF8.toString bs)
+    where
+        getCol s i =
+              BUTF8.toString <$> (B.packCString =<< sqlite3_column_name s i)
 
+fexecutemany :: SState -> [[SqlValue]] -> IO ()
 fexecutemany _ [] = return ()
-fexecutemany sstate (args:[]) = 
-    do fexecute sstate args
-       return ()
-fexecutemany sstate (args:arglist) =
-    do fexecute (sstate { autoFinish = False }) args
-       fexecutemany sstate arglist
+fexecutemany sstate (args:[]) = do
+    _ <- fexecute sstate args
+    return ()
+fexecutemany sstate (args:arglist) = do
+    _ <- fexecute (sstate { autoFinish = False }) args
+    fexecutemany sstate arglist
 
 --ffinish o = withForeignPtr o (\p -> sqlite3_finalize p >>= checkError "finish")
 -- Finish and change state
+public_ffinish :: SState -> IO ()
 public_ffinish sstate = modifyMVar_ (stomv sstate) worker
     where worker (Empty) = return Empty
           worker (Prepared sto) = ffinish (dbo sstate) sto >> return Empty
           worker (Executed sto) = ffinish (dbo sstate) sto >> return Empty
           worker (Exhausted sto) = ffinish (dbo sstate) sto >> return Empty
     
-ffinish dbo o = withRawStmt o (\p -> do r <- sqlite3_finalize p
-                                        checkError "finish" dbo r)
+ffinish :: Sqlite3 -> Stmt -> IO ()
+ffinish db st = withRawStmt st $ \p ->
+    sqlite3_finalize p >>= checkError "finish" db
 
 foreign import ccall unsafe "hdbc-sqlite3-helper.h &sqlite3_finalize_finalizer"
   sqlite3_finalizeptr :: FunPtr ((Ptr CStmt) -> IO ())

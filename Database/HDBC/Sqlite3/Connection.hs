@@ -79,24 +79,21 @@ mkConn fp obj =
                             Impl.describeTable = fdescribeTable obj children,
                             Impl.setBusyTimeout = fsetbusy obj}
 
+fgettables :: Sqlite3 -> ChildList -> IO [String]
 fgettables o mchildren =
     do sth <- newSth o mchildren True "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-       execute sth []
-       res1 <- fetchAllRows' sth
-       let res = map fromSql $ concat res1
-       return $ seq (length res) res
+       res <- execute sth [] >> fetchAllRows' sth
+       return $ map fromSql $ concat res
 
+fdescribeTable :: Sqlite3 -> ChildList -> String -> IO [(String, SqlColDesc)]
 fdescribeTable o mchildren name =  do
     sth <- newSth o mchildren True $ "PRAGMA table_info(" ++ name ++ ")"
-    execute sth []
-    res1 <- fetchAllRows' sth
-    return $ map describeCol res1
+    res <- execute sth [] >> fetchAllRows' sth
+    return [ (fromSql nm, describeType typ notnull df pk)
+               | (_:nm:typ:notnull:df:pk:_) <- res ]
   where
-     describeCol (_:name:typ:notnull:df:pk:_) =
-        (fromSql name, describeType typ notnull df pk)
-
-     describeType name notnull df pk =
-         SqlColDesc (typeId name) Nothing Nothing Nothing (nullable notnull)
+     describeType nm notnull _ _ =
+         SqlColDesc (typeId nm) Nothing Nothing Nothing (nullable notnull)
 
      nullable SqlNull = Nothing
      nullable (SqlString "0") = Just True
@@ -120,6 +117,7 @@ fdescribeTable o mchildren name =  do
        other           -> SqlUnknownT other
 
 
+fsetbusy :: Sqlite3 -> CInt -> IO ()
 fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
     sqlite3_busy_timeout ppdb ms
 
@@ -130,11 +128,11 @@ fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
 begin_transaction :: Sqlite3 -> ChildList -> IO ()
 begin_transaction o children = frun o children "BEGIN" [] >> return ()
 
+frun :: Sqlite3 -> ChildList -> String -> [SqlValue] -> IO Integer
 frun o mchildren query args =
     do sth <- newSth o mchildren False query
        res <- execute sth args
-       finish sth
-       return res
+       (return $! res) <* finish sth
 
 frunRaw :: Sqlite3 -> ChildList -> String -> IO ()
 frunRaw o mchildren query =
@@ -142,10 +140,12 @@ frunRaw o mchildren query =
        executeRaw sth
        finish sth
 
-fcommit o children = do frun o children "COMMIT" []
-                        begin_transaction o children
-frollback o children = do frun o children "ROLLBACK" []
-                          begin_transaction o children
+fcommit :: Sqlite3 -> ChildList -> IO ()
+fcommit o children =
+    frun o children "COMMIT" [] >> begin_transaction o children
+frollback :: Sqlite3 -> ChildList -> IO ()
+frollback o children =
+    frun o children "ROLLBACK" [] >> begin_transaction o children
 
 fdisconnect :: Sqlite3 -> ChildList -> IO ()
 fdisconnect o mchildren = withRawSqlite3 o $ \p ->
