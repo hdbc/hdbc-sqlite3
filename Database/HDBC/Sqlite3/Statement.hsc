@@ -26,7 +26,7 @@ import Database.HDBC.DriverUtils
 fail if there are any active statements.  This is highly annoying, and makes
 for some somewhat complex algorithms. -}
 
-data StoState = Empty           -- ^ Not initialized or last execute\/fetchrow had no results
+data StoState = Empty           -- ^ Not initialized or auto-finished
               | Prepared Stmt   -- ^ Prepared but not executed
               | Executed Stmt   -- ^ Executed and more rows are expected
               | Exhausted Stmt  -- ^ Executed and at end of rows
@@ -52,9 +52,8 @@ newSth indbo mchildren auto str =
                            querys = str,
                            colnamesmv = newcolnamesmv,
                            autoFinish = auto}
-       modifyMVar_ (stomv sstate) (\_ -> (fprepare sstate >>= return . Prepared))
-       let retval = 
-               Statement {execute = fexecute sstate,
+           retval =
+               Statement { execute = fexecute sstate,
                            executeRaw = fexecuteRaw indbo str,
                            executeMany = fexecutemany sstate,
                            finish = public_ffinish sstate,
@@ -62,6 +61,7 @@ newSth indbo mchildren auto str =
                            originalQuery = str,
                            getColumnNames = readMVar (colnamesmv sstate),
                            describeResult = fail "Sqlite3 backend does not support describeResult"}
+       modifyMVar_ newstomv $ const $ Prepared <$> fprepare sstate
        mapM_ (flip addChild retval) mchildren
        return retval
 
@@ -109,7 +109,7 @@ ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
                  if r
                     then return (Executed sto, Just res)
                     else if (autoFinish sstate)
-                            then do ffinish (dbo sstate) sto
+                            then do ffinish sstate sto
                                     return (Empty, Just res)
                             else do r' <- sqlite3_reset p
                                     checkError "(fetch) reset" (dbo sstate) r'
@@ -182,7 +182,7 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  if r
                     then return (Executed sto, fromIntegral changes)
                     else if (autoFinish sstate)
-                            then do ffinish (dbo sstate) sto
+                            then do ffinish sstate sto
                                     return (Empty, fromIntegral changes)
                             else return (Exhausted sto, fromIntegral changes)
                                                         )
@@ -243,13 +243,13 @@ fexecutemany s                            vs = go (s {autoFinish=False}) s vs
 public_ffinish :: SState -> IO ()
 public_ffinish sstate = modifyMVar_ (stomv sstate) worker
     where worker (Empty) = return Empty
-          worker (Prepared sto) = ffinish (dbo sstate) sto >> return Empty
-          worker (Executed sto) = ffinish (dbo sstate) sto >> return Empty
-          worker (Exhausted sto) = ffinish (dbo sstate) sto >> return Empty
+          worker (Prepared sto) = ffinish sstate sto >> return Empty
+          worker (Executed sto) = ffinish sstate sto >> return Empty
+          worker (Exhausted sto) = ffinish sstate sto >> return Empty
     
-ffinish :: Sqlite3 -> Stmt -> IO ()
-ffinish db st = withRawStmt st $ \p ->
-    sqlite3_finalize p >>= checkError "finish" db
+ffinish :: SState -> Stmt -> IO ()
+ffinish sstate sto = withRawStmt sto $ \p ->
+    sqlite3_finalize p >>= checkError "finish" (dbo sstate)
 
 foreign import ccall unsafe "hdbc-sqlite3-helper.h &sqlite3_finalize_finalizer"
   sqlite3_finalizeptr :: FunPtr ((Ptr CStmt) -> IO ())

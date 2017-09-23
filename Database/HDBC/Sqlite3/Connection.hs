@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- above line for hugs
 
@@ -24,6 +25,7 @@ import Database.HDBC.Sqlite3.Utils
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Concurrent.MVar
+import Control.Exception (bracket)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.UTF8 as BUTF8
 import qualified Data.Char
@@ -90,14 +92,20 @@ mkConn fp obj auto raw = do
        children <- if auto
                       then Just <$> newMVar []
                       else return Nothing
-       begin_transaction obj children
+       fexecuteRaw obj "BEGIN"
+
+       let alltables = "SELECT name\
+                      \ FROM sqlite_master\
+                      \ WHERE type='table'\
+                      \ ORDER BY name"
+
        ver <- (sqlite3_libversion >>= peekCString)
        return $ Impl.Connection {
                             Impl.disconnect = fdisconnect obj children,
-                            Impl.commit = fcommit obj children,
-                            Impl.rollback = frollback obj children,
-                            Impl.run = frun obj children,
-                            Impl.runRaw = frunRaw obj children,
+                            Impl.commit = newtransaction obj "COMMIT",
+                            Impl.rollback = newtransaction obj "ROLLBACK",
+                            Impl.run = frun obj,
+                            Impl.runRaw = fexecuteRaw obj,
                             Impl.prepare = newSth obj children auto,
                             Impl.clone = connectSqlite3Ext auto raw fp,
                             Impl.hdbcDriverName = "sqlite3",
@@ -106,22 +114,21 @@ mkConn fp obj auto raw = do
                             Impl.proxiedClientVer = ver,
                             Impl.dbTransactionSupport = True,
                             Impl.dbServerVer = ver,
-                            Impl.getTables = fgettables obj children,
-                            Impl.describeTable = fdescribeTable obj children,
-                            Impl.setBusyTimeout = fsetbusy obj}
+                            Impl.getTables = fgettables obj alltables,
+                            Impl.describeTable = fdescribeTable obj,
+                            Impl.setBusyTimeout = fsetbusy obj }
 
-fgettables :: Sqlite3 -> Maybe ChildList -> IO [String]
-fgettables o mchildren =
-    do sth <- newSth o mchildren False "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-       res <- execute sth [] >> fetchAllRows' sth
-       finish sth
-       return $ map fromSql $ concat res
+fgettables :: Sqlite3 -> String -> IO [String]
+fgettables obj query =
+    bracket (newSth obj Nothing False query)
+             (finish) $ \sth -> do
+        res <- execute sth [] >> fetchAllRows' sth
+        return $ map fromSql $ concat res
 
-fdescribeTable :: Sqlite3 -> Maybe ChildList -> String -> IO [(String, SqlColDesc)]
-fdescribeTable o mchildren name =  do
-    sth <- newSth o mchildren False $ "PRAGMA table_info(" ++ name ++ ")"
-    res <- execute sth [] >> fetchAllRows' sth
-    finish sth
+fdescribeTable :: Sqlite3 -> String -> IO [(String, SqlColDesc)]
+fdescribeTable o name = do
+    sth <- newSth o Nothing False $ "PRAGMA table_info(" ++ name ++ ")"
+    res <- execute sth [] *> fetchAllRows' sth <* finish sth
     return [ (fromSql nm, describeType typ notnull df pk)
                | (_:nm:typ:notnull:df:pk:_) <- res ]
   where
@@ -158,31 +165,19 @@ fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
 -- Guts here
 --------------------------------------------------
 
-begin_transaction :: Sqlite3 -> Maybe ChildList -> IO ()
-begin_transaction o children = frun o children "BEGIN" [] >> return ()
+frun :: Sqlite3 -> String -> [SqlValue] -> IO Integer
+frun o query args =
+    bracket (newSth o Nothing False query)
+            (finish)
+            (flip execute args)
 
-frun :: Sqlite3 -> Maybe ChildList -> String -> [SqlValue] -> IO Integer
-frun o mchildren query args =
-    do sth <- newSth o mchildren False query
-       res <- execute sth args
-       (return $! res) <* finish sth
-
-frunRaw :: Sqlite3 -> Maybe ChildList -> String -> IO ()
-frunRaw o mchildren query =
-    do sth <- newSth o mchildren False query
-       executeRaw sth
-       finish sth
-
-fcommit :: Sqlite3 -> Maybe ChildList -> IO ()
-fcommit o children =
-    frun o children "COMMIT" [] >> begin_transaction o children
-frollback :: Sqlite3 -> Maybe ChildList -> IO ()
-frollback o children =
-    frun o children "ROLLBACK" [] >> begin_transaction o children
+newtransaction :: Sqlite3 -> String -> IO ()
+newtransaction obj how = fexecuteRaw obj how >> fexecuteRaw obj "BEGIN"
 
 fdisconnect :: Sqlite3 -> Maybe ChildList -> IO ()
-fdisconnect o mchildren = withRawSqlite3 o $ \p ->
-    do mapM_ closeAllChildren mchildren
+fdisconnect o mchildren =
+    withRawSqlite3 o $ \p -> do
+       mapM_ closeAllChildren mchildren
        r <- sqlite3_close p
        checkError "disconnect" o r
 
