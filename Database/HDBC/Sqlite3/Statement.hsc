@@ -17,7 +17,7 @@ import Control.Monad
 import qualified Data.ByteString as B
 import qualified Data.ByteString.UTF8 as BUTF8
 import Data.List
-import Control.Exception
+import Data.Int (Int64)
 import Database.HDBC.DriverUtils
 
 #include <sqlite3.h>
@@ -117,17 +117,17 @@ ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
  
           getCol p icol = 
              do t <- sqlite3_column_type p icol
-                if t == #{const SQLITE_NULL}
-                   then return SqlNull
-                   else do text <- sqlite3_column_text p icol
-                           len <- sqlite3_column_bytes p icol
-                           s <- B.packCStringLen (text, fromIntegral len)
-                           case t of
-                             #{const SQLITE_INTEGER} -> return $ SqlInt64 (read $ BUTF8.toString s)
-                             #{const SQLITE_FLOAT}   -> return $ SqlDouble (read $ BUTF8.toString s)
-                             #{const SQLITE_BLOB}    -> return $ SqlByteString s
-                             #{const SQLITE_TEXT}    -> return $ SqlByteString s
-                             _                       -> return $ SqlByteString s
+                case t of
+                  #{const SQLITE_NULL}    -> return SqlNull
+                  #{const SQLITE_INTEGER} -> SqlInt64  <$> sqlite3_column_int64  p icol
+                  #{const SQLITE_FLOAT}   -> SqlDouble <$> sqlite3_column_double p icol
+                  _                       -> SqlByteString <$> getbytes p icol
+
+          getbytes p icol =
+             do str <- sqlite3_column_text  p icol
+                len <- sqlite3_column_bytes p icol
+                B.packCStringLen (str, fromIntegral len)
+
 
 fstep :: Sqlite3 -> Ptr CStmt -> IO Bool
 fstep dbo p =
@@ -280,6 +280,12 @@ foreign import ccall unsafe "sqlite3.h sqlite3_column_text"
 
 foreign import ccall unsafe "sqlite3.h sqlite3_column_bytes"
   sqlite3_column_bytes :: (Ptr CStmt) -> CInt -> IO CInt
+
+foreign import ccall unsafe "sqlite3.h sqlite3_column_int64"
+  sqlite3_column_int64 :: (Ptr CStmt) -> CInt -> IO Int64
+
+foreign import ccall unsafe "sqlite3.h sqlite3_column_double"
+  sqlite3_column_double :: (Ptr CStmt) -> CInt -> IO Double
 
 foreign import ccall unsafe "hdbc-sqlite3-helper.h sqlite3_bind_text2"
   sqlite3_bind_text2 :: (Ptr CStmt) -> CInt -> CString -> CInt -> IO CInt
