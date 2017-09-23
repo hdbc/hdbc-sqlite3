@@ -81,7 +81,7 @@ int sqlite3_prepare2(finalizeonce *fdb, const char *zSql,
                      int nBytes, finalizeonce **ppo,
                      const char **pzTail) {
 
-  sqlite3_stmt *ppst;
+  sqlite3_stmt *ppst = NULL;
   sqlite3 *db;
   finalizeonce *newobj;
   int res;
