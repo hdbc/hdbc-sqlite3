@@ -59,11 +59,29 @@ newSth indbo mchildren auto str =
                            finish = public_ffinish sstate,
                            fetchRow = ffetchrow sstate,
                            originalQuery = str,
-                           getColumnNames = readMVar (colnamesmv sstate),
+                           getColumnNames = getcols sstate,
                            describeResult = fail "Sqlite3 backend does not support describeResult"}
        modifyMVar_ newstomv $ const $ Prepared <$> fprepare sstate
        mapM_ (flip addChild retval) mchildren
        return retval
+    where
+       -- Fetching the column names from Sqlite3 requires the statement to
+       -- be in a prepared state.
+       --
+       -- With auto-finish off, the statement will stay prepared, and we'll
+       -- always fetch "live" column data.  With auto-finish on, we save
+       -- the column names each time we prepare, as they could be requested
+       -- after the statement was automatically finished when returning the
+       -- last row.
+       --
+       getcols :: SState -> IO [String]
+       getcols sstate = readMVar (stomv sstate) >>= stocols sstate
+
+       stocols :: SState -> StoState -> IO [String]
+       stocols _ (Prepared sto)  = withStmt sto $ fgetcolnames
+       stocols _ (Executed sto)  = withStmt sto $ fgetcolnames
+       stocols _ (Exhausted sto) = withStmt sto $ fgetcolnames
+       stocols sstate Empty      = readMVar (colnamesmv sstate)
 
 {- The deal with adding the \0 below is in response to an apparent bug in
 sqlite3.  See debian bug #343736. 
@@ -73,8 +91,8 @@ been terminated.  (FIXME: should check this at runtime.... never run fprepare
 unless state is Empty)
 -}
 fprepare :: SState -> IO Stmt
-fprepare sstate = withRawSqlite3 (dbo sstate)
-  (\p -> B.useAsCStringLen (BUTF8.fromString ((querys sstate) ++ "\0"))
+fprepare sstate = withRawSqlite3 (dbo sstate) $ \p -> do
+  s <- B.useAsCStringLen (BUTF8.fromString ((querys sstate) ++ "\0"))
    (\(cs, cslen) -> alloca
     (\(newp::Ptr (Ptr CStmt)) -> 
      (do res <- sqlite3_prepare p cs (fromIntegral cslen) newp nullPtr
@@ -83,10 +101,11 @@ fprepare sstate = withRawSqlite3 (dbo sstate)
          newo <- peek newp
          newForeignPtr sqlite3_finalizeptr newo
      )
-     )
+    )
    )
-   )
-                 
+  modifyMVar_ (colnamesmv sstate) $ const $ withStmt s $ fgetcolnames
+  return s
+
 
 {- General algorithm: find out how many columns we have, check the type
 of each to see if it's NULL.  If it's not, fetch it as text and return that.
@@ -152,9 +171,7 @@ fexecute :: SState -> [SqlValue] -> IO Integer
 fexecute sstate args = modifyMVar (stomv sstate) doexecute
     where doexecute (Executed sto) = doexecute (Prepared sto)
           doexecute (Exhausted sto) = doexecute (Prepared sto)
-          doexecute Empty =     -- already cleaned up from last time
-              do sto <- fprepare sstate
-                 doexecute (Prepared sto)
+          doexecute Empty = doexecute =<< Prepared <$> fprepare sstate
           doexecute (Prepared sto) = withStmt sto (\p -> 
               do c <- sqlite3_bind_parameter_count p
                  when (c /= genericLength args)
@@ -178,7 +195,6 @@ fexecute sstate args = modifyMVar (stomv sstate) doexecute
                  changes <- if origtc == newtc
                                then return 0
                                else withSqlite3 (dbo sstate) sqlite3_changes
-                 _ <- fgetcolnames p >>= swapMVar (colnamesmv sstate)
                  if r
                     then return (Executed sto, fromIntegral changes)
                     else if (autoFinish sstate)
