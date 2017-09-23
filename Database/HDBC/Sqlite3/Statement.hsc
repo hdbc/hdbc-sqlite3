@@ -43,7 +43,7 @@ data SState = SState {dbo :: Sqlite3,
                       colnamesmv :: MVar [String],
                       autoFinish :: Bool}
 
-newSth :: Sqlite3 -> ChildList -> Bool -> String -> IO Statement
+newSth :: Sqlite3 -> Maybe ChildList -> Bool -> String -> IO Statement
 newSth indbo mchildren auto str =
     do newstomv <- newMVar Empty
        newcolnamesmv <- newMVar []
@@ -62,7 +62,7 @@ newSth indbo mchildren auto str =
                            originalQuery = str,
                            getColumnNames = readMVar (colnamesmv sstate),
                            describeResult = fail "Sqlite3 backend does not support describeResult"}
-       addChild mchildren retval
+       mapM_ (flip addChild retval) mchildren
        return retval
 
 {- The deal with adding the \0 below is in response to an apparent bug in
@@ -111,7 +111,9 @@ ffetchrow sstate = modifyMVar (stomv sstate) dofetchrow
                     else if (autoFinish sstate)
                             then do ffinish (dbo sstate) sto
                                     return (Empty, Just res)
-                            else return (Exhausted sto, Just res)
+                            else do r' <- sqlite3_reset p
+                                    checkError "(fetch) reset" (dbo sstate) r'
+                                    return (Exhausted sto, Just res)
                                                           )
           dofetchrow (Exhausted sto) = return (Exhausted sto, Nothing)
  
@@ -222,16 +224,21 @@ fgetcolnames csth =
         getCol s i =
               BUTF8.toString <$> (B.packCString =<< sqlite3_column_name s i)
 
+-- When auto-finish is enabled, the final argument vector is executed with the
+-- true value of the auto-finish flag, while for any other initial vectors the
+-- auto-finish flag appears disabled.  Perhaps we should find a way to detect
+-- misuse of this interface for queries, as only the results of the final
+-- query are seen by the caller, and any prior results are reset unread.
+--
 fexecutemany :: SState -> [[SqlValue]] -> IO ()
-fexecutemany _ [] = return ()
-fexecutemany sstate (args:[]) = do
-    _ <- fexecute sstate args
-    return ()
-fexecutemany sstate (args:arglist) = do
-    _ <- fexecute (sstate { autoFinish = False }) args
-    fexecutemany sstate arglist
+fexecutemany s@(SState{autoFinish=False}) vs = mapM_ (fexecute s) vs
+fexecutemany s                     vs@(_:[]) = mapM_ (fexecute s) vs
+fexecutemany s                            vs = go (s {autoFinish=False}) s vs
+    where
+        go _ t (args:[])   = fexecute t args >>= const (return ())
+        go i t (args:more) = fexecute i args >>= const (go i t more)
+        go _ _ []          = return ()
 
---ffinish o = withForeignPtr o (\p -> sqlite3_finalize p >>= checkError "finish")
 -- Finish and change state
 public_ffinish :: SState -> IO ()
 public_ffinish sstate = modifyMVar_ (stomv sstate) worker
