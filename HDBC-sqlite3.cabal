@@ -45,8 +45,13 @@ Library
 Executable runtests
    if flag(buildtests)
       Buildable: True
-      Build-Depends: HUnit, testpack, containers, convertible, 
-                  old-time, time, old-locale
+      Build-Depends: HUnit
+                   , QuickCheck
+                   , testpack
+                   , template-haskell
+                   , containers
+                   , convertible
+                   , time
    else
       Buildable: False
    Main-Is: runtests.hs
@@ -54,9 +59,11 @@ Executable runtests
                   SpecificDBTests,
                   TestMisc,
                   TestSbasics,
+                  TestTime,
                   TestUtils,
                   Testbasics,
                   Tests,
+                  Database.HDBC.Sqlite3,
                   Database.HDBC.Sqlite3.Connection,
                   Database.HDBC.Sqlite3.ConnectionImpl,
                   Database.HDBC.Sqlite3.Statement,
