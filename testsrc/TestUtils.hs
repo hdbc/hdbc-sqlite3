@@ -1,9 +1,9 @@
-module TestUtils(connectDB, sqlTestCase, dbTestCase, printDBInfo) where
+module TestUtils(connectDB, connectDBExt, sqlTestCase, dbTestCase, dbTestCaseExt, printDBInfo) where
 import Database.HDBC
 import Database.HDBC.Sqlite3
 import Test.HUnit
 import Control.Exception
-import SpecificDB(connectDB)
+import SpecificDB(connectDB, connectDBExt)
 
 sqlTestCase :: IO () -> Test
 sqlTestCase a = 
@@ -12,6 +12,13 @@ sqlTestCase a =
 dbTestCase :: (Connection -> IO ()) -> Test
 dbTestCase a =
     TestCase (do dbh <- connectDB
+                 finally (handleSqlError (a dbh))
+                         (handleSqlError (disconnect dbh))
+             )
+
+dbTestCaseExt :: Bool -> (Connection -> IO()) -> Test
+dbTestCaseExt auto a =
+    TestCase (do dbh <- connectDBExt auto
                  finally (handleSqlError (a dbh))
                          (handleSqlError (disconnect dbh))
              )
