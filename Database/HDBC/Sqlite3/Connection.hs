@@ -1,9 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# CFILES hdbc-sqlite3-helper.c #-}
 -- above line for hugs
 
 module Database.HDBC.Sqlite3.Connection
-  (connectSqlite3, connectSqlite3Raw, Impl.Connection())
+  ( connectSqlite3
+  , connectSqlite3Raw
+  , connectSqlite3Ext
+  , Impl.Connection()
+  )
   where
 
 import Database.HDBC.Types
@@ -20,6 +25,7 @@ import Database.HDBC.Sqlite3.Utils
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Concurrent.MVar
+import Control.Exception (bracket)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.UTF8 as BUTF8
 import qualified Data.Char
@@ -29,8 +35,7 @@ the filename of the database to connect to.
 
 All database accessor functions are provided in the main HDBC module. -}
 connectSqlite3 :: FilePath -> IO Impl.Connection
-connectSqlite3 =
-    genericConnect (B.useAsCString . BUTF8.fromString)
+connectSqlite3 = connectSqlite3Ext True False
 
 {- | Connects to a Sqlite v3 database as with 'connectSqlite3', but
 instead of converting the supplied 'FilePath' to a C String by performing
@@ -38,65 +43,97 @@ a conversion to Unicode, instead converts it by simply dropping all bits past
 the eighth.  This may be useful in rare situations
 if your application or filesystemare not running in Unicode space. -}
 connectSqlite3Raw :: FilePath -> IO Impl.Connection
-connectSqlite3Raw = genericConnect withCString
+connectSqlite3Raw = connectSqlite3Ext True True
+
+{- | Connect to an Sqlite version 3 database as with connectSqlite3, but if
+auto-finish is disabled, HDBC will not auto-finish prepared statements after
+the last row is fetched. Keeping the statement in its prepared state improves
+the performance of repeated execution of cached prepared statements, and
+eliminates the overhead of tracking open statement handles by HDBC.
+
+With auto-finish disabled, the application is responsible for explicitly
+finishing all application prepared statements before @disconnect@ is called.
+Otherwise, the SQLite3 database may, at that time, throw an exception when
+some prepared statements are still open, they may not be finalized in time
+via garbage collection even if they are already out of scope.
+
+The filesystem in which the database resides is by default assumed to support
+UTF-8 filenames.  If that's not the case, set @raw@ to 'True' and provide a
+'FilePath` that holds the byte encoding of the native filename. -}
+connectSqlite3Ext :: Bool     -- ^ Auto-finish statements
+                  -> Bool     -- ^ If true Raw 8-bit name encoding else UTF-8
+                  -> FilePath -- ^ Database file name
+                  -> IO Impl.Connection
+connectSqlite3Ext auto raw =
+     let nameDecoder = if raw then withCString
+                              else (B.useAsCString . BUTF8.fromString)
+     in genericConnect nameDecoder auto raw
 
 genericConnect :: (String -> (CString -> IO Impl.Connection) -> IO Impl.Connection)
+               -> Bool
+               -> Bool
                -> FilePath
                -> IO Impl.Connection
-genericConnect strAsCStrFunc fp =
+genericConnect strAsCStrFunc auto raw fp =
     strAsCStrFunc fp
         (\cs -> alloca
          (\(p::Ptr (Ptr CSqlite3)) ->
               do res <- sqlite3_open cs p
                  o <- peek p
                  fptr <- newForeignPtr sqlite3_closeptr o
-                 newconn <- mkConn fp fptr
+                 newconn <- mkConn fp fptr auto raw
                  checkError ("connectSqlite3 " ++ fp) fptr res
                  return newconn
          )
         )
 
-mkConn :: FilePath -> Sqlite3 -> IO Impl.Connection
-mkConn fp obj =
-    do children <- newMVar []
-       begin_transaction obj children
+mkConn :: FilePath -> Sqlite3 -> Bool -> Bool -> IO Impl.Connection
+mkConn fp obj auto raw = do
+       children <- if auto
+                      then Just <$> newMVar []
+                      else return Nothing
+       fexecuteRaw obj "BEGIN"
+
+       let alltables = "SELECT name\
+                      \ FROM sqlite_master\
+                      \ WHERE type='table'\
+                      \ ORDER BY name"
+
        ver <- (sqlite3_libversion >>= peekCString)
        return $ Impl.Connection {
                             Impl.disconnect = fdisconnect obj children,
-                            Impl.commit = fcommit obj children,
-                            Impl.rollback = frollback obj children,
-                            Impl.run = frun obj children,
-                            Impl.runRaw = frunRaw obj children,
-                            Impl.prepare = newSth obj children True,
-                            Impl.clone = connectSqlite3 fp,
+                            Impl.commit = newtransaction obj "COMMIT",
+                            Impl.rollback = newtransaction obj "ROLLBACK",
+                            Impl.run = frun obj,
+                            Impl.runRaw = fexecuteRaw obj,
+                            Impl.prepare = newSth obj children auto,
+                            Impl.clone = connectSqlite3Ext auto raw fp,
                             Impl.hdbcDriverName = "sqlite3",
                             Impl.hdbcClientVer = ver,
                             Impl.proxiedClientName = "sqlite3",
                             Impl.proxiedClientVer = ver,
                             Impl.dbTransactionSupport = True,
                             Impl.dbServerVer = ver,
-                            Impl.getTables = fgettables obj children,
-                            Impl.describeTable = fdescribeTable obj children,
-                            Impl.setBusyTimeout = fsetbusy obj}
+                            Impl.getTables = fgettables obj alltables,
+                            Impl.describeTable = fdescribeTable obj,
+                            Impl.setBusyTimeout = fsetbusy obj }
 
-fgettables o mchildren =
-    do sth <- newSth o mchildren True "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-       execute sth []
-       res1 <- fetchAllRows' sth
-       let res = map fromSql $ concat res1
-       return $ seq (length res) res
+fgettables :: Sqlite3 -> String -> IO [String]
+fgettables obj query =
+    bracket (newSth obj Nothing False query)
+             (finish) $ \sth -> do
+        res <- execute sth [] >> fetchAllRows' sth
+        return $ map fromSql $ concat res
 
-fdescribeTable o mchildren name =  do
-    sth <- newSth o mchildren True $ "PRAGMA table_info(" ++ name ++ ")"
-    execute sth []
-    res1 <- fetchAllRows' sth
-    return $ map describeCol res1
+fdescribeTable :: Sqlite3 -> String -> IO [(String, SqlColDesc)]
+fdescribeTable o name = do
+    sth <- newSth o Nothing False $ "PRAGMA table_info(" ++ name ++ ")"
+    res <- execute sth [] *> fetchAllRows' sth <* finish sth
+    return [ (fromSql nm, describeType typ notnull df pk)
+               | (_:nm:typ:notnull:df:pk:_) <- res ]
   where
-     describeCol (_:name:typ:notnull:df:pk:_) =
-        (fromSql name, describeType typ notnull df pk)
-
-     describeType name notnull df pk =
-         SqlColDesc (typeId name) Nothing Nothing Nothing (nullable notnull)
+     describeType nm notnull _ _ =
+         SqlColDesc (typeId nm) Nothing Nothing Nothing (nullable notnull)
 
      nullable SqlNull = Nothing
      nullable (SqlString "0") = Just True
@@ -120,6 +157,7 @@ fdescribeTable o mchildren name =  do
        other           -> SqlUnknownT other
 
 
+fsetbusy :: Sqlite3 -> CInt -> IO ()
 fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
     sqlite3_busy_timeout ppdb ms
 
@@ -127,29 +165,19 @@ fsetbusy o ms = withRawSqlite3 o $ \ppdb ->
 -- Guts here
 --------------------------------------------------
 
-begin_transaction :: Sqlite3 -> ChildList -> IO ()
-begin_transaction o children = frun o children "BEGIN" [] >> return ()
+frun :: Sqlite3 -> String -> [SqlValue] -> IO Integer
+frun o query args =
+    bracket (newSth o Nothing False query)
+            (finish)
+            (flip execute args)
 
-frun o mchildren query args =
-    do sth <- newSth o mchildren False query
-       res <- execute sth args
-       finish sth
-       return res
+newtransaction :: Sqlite3 -> String -> IO ()
+newtransaction obj how = fexecuteRaw obj how >> fexecuteRaw obj "BEGIN"
 
-frunRaw :: Sqlite3 -> ChildList -> String -> IO ()
-frunRaw o mchildren query =
-    do sth <- newSth o mchildren False query
-       executeRaw sth
-       finish sth
-
-fcommit o children = do frun o children "COMMIT" []
-                        begin_transaction o children
-frollback o children = do frun o children "ROLLBACK" []
-                          begin_transaction o children
-
-fdisconnect :: Sqlite3 -> ChildList -> IO ()
-fdisconnect o mchildren = withRawSqlite3 o $ \p ->
-    do closeAllChildren mchildren
+fdisconnect :: Sqlite3 -> Maybe ChildList -> IO ()
+fdisconnect o mchildren =
+    withRawSqlite3 o $ \p -> do
+       mapM_ closeAllChildren mchildren
        r <- sqlite3_close p
        checkError "disconnect" o r
 

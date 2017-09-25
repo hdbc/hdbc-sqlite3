@@ -9,8 +9,10 @@ import qualified SpecificDBTests
 import qualified TestMisc
 import qualified TestTime
 
+test1 :: Test
 test1 = TestCase ("x" @=? "x")
 
+tests :: Test
 tests = TestList [TestLabel "test1" test1,
                   TestLabel "String basics" TestSbasics.tests,
                   TestLabel "SqlValue basics" Testbasics.tests,

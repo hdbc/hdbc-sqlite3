@@ -31,8 +31,6 @@ module Database.HDBC.Sqlite3.Consts
   sqlite_DONE)
 where
 
-import Foreign.C.Types
-
 #include <sqlite3.h>
 
 -- | Successful result
