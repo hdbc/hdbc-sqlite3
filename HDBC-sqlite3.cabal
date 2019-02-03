@@ -27,6 +27,7 @@ Library
 
   C-Sources: hdbc-sqlite3-helper.c
   include-dirs: .
+  Pkgconfig-Depends: sqlite3
   Extra-Libraries: sqlite3
   Exposed-Modules: Database.HDBC.Sqlite3
   Other-Modules: Database.HDBC.Sqlite3.Connection,
